@@ -12,8 +12,8 @@ class User:
 
 listUsers= [
     User(1,"usuari1", "12345", "prova@gmail.com"),
-    User(2,"usuari2", "1234", "user2@proven.cat"),
-    User(3,"admin","123","admin@proven.cat"),
+    User(2,"user2", "123", "user2@proven.cat"),
+    User(3,"admin","12","admin@proven.cat"),
     User(4,"admin2","12")
 ]
 
@@ -37,6 +37,15 @@ else:
 
 app = Flask(__name__)
 
+@app.route('/tapatapp/getuser', methods=['GET'])
+def getUser():
+    n = str(request.args.get('name'))
+    email = str(request.args.get('email'))
+    return "Hello World: Nom:" + n + " :email = " + email
+
+@app.route('/prototip/getuser/<string:username>', methods=['GET'])
+def prototipGetUser(username):
+    return "Prototip 1, user: " + username
 
 if __name__ == '__main__':
      app.run(debug=True,host="0.0.0.0",port="10050")
