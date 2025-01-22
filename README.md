@@ -1,4 +1,4 @@
-#TapatApp
+# TapatApp
 
 Hola Mundo!!
 
@@ -25,3 +25,15 @@ Hola Mundo!!
 ## Http Response
 
 [Http Response](Http_Response.md)
+
+## Definició dels EndPoints del Servei Web:
+
+Què necessitem per cada End-point
+
+Descripció:
+HOST: Domain port
+End-point (URL):
+Method: GET
+Tipus de petició (headers)
+Parametres que necessita la petició: (identifica els paràmetres i posa exemples en el cas de peticions GET)
+Resposta:
