@@ -1,79 +1,99 @@
-# Http Response
-Una HTTP Response (Resposta HTTP) és la resposta que el servidor envia al client després d'una petició HTTP (com ara una petició GET o POST). La resposta inclou informació sobre si la petició va ser procesada correctament o si va ocórrer un error.
+Una resposta HTTP és el missatge que un servidor retorna al client després de rebre una petició HTTP (com una petició GET o POST). Aquesta resposta informa el client sobre si la petició s'ha processat correctament o si ha ocorregut un error.
 
-Una resposta HTTP general es compon de tres parts principals:
+En general, una resposta HTTP es divideix en tres components principals:
 
 Línia d'estat (Status Line)
-Headers
-Body
+
+Capçaleres (Headers)
+
+Cos de la resposta (Body)
+
 
 ## Línia d'estat (Status Line)
-El protocol de la resposta: Normalment HTTP/1.1 o HTTP/2.
-El codi d'estat HTTP: Un número que indica l'estat de la petició (com 200, 404, 500, etc.).
-La descripció de l'estat: Una breu explicació del codi d'estat (com "OK" o "Not Found").
 
-## Headers
-Els headers són metadades que proporcionen informació addicional sobre la resposta, com el tipus de contingut, la longitud del contingut, les cookies, i altres detalls de la comunicació.
-Exemples de headers comuns:
-Content-Type: Indica el tipus de contingut de la resposta (per exemple, text/html, application/json, image/jpeg).
+La línia d'estat inclou:
+
+Protocol de la resposta: Sovint HTTP/1.1 o HTTP/2.
+
+Codi d'estat HTTP: Un número que descriu el resultat de la petició (exemples: 200, 404, 500).
+
+Descripció de l'estat: Un text breu que explica el codi d'estat, com "OK" o "Not Found".
+
+## Capçaleres (Headers)
+
+Les capçaleres són metadades que ofereixen informació addicional sobre la resposta, com ara el tipus de contingut, la mida o les cookies associades. Alguns exemples comuns són:
+
+Content-Type: Especifica el format del contingut retornat (ex.: text/html, application/json).
 Content-Length: Indica la mida del contingut en bytes.
-Date: La data i hora en què es va generar la resposta.
-Server: La informació sobre el servidor que ha generat la resposta.
-Set-Cookie: Si s'han establert cookies al client.
+Date: Registra la data i l'hora en què es va generar la resposta.
+Server: Proporciona informació sobre el servidor que ha processat la sol·licitud.
+Set-Cookie: Utilitzat per enviar cookies al client.
 
-## Body (cos de la resposta)
-El body de la resposta conté les dades que el servidor vol enviar al client. El contingut del body depèn del tipus de petició i la resposta, i pot ser una pàgina web HTML, un document JSON, un fitxer d'imatge, etc.
-HTML: En el cas de pàgines web, el cos serà el codi HTML.
-JSON: Quan s'està treballant amb API RESTful, el cos sovint serà un objecte o array JSON.
-binari: Quan es carrega un fitxer, el cos contindrà les dades binàries d'aquest fitxer (per exemple, una imatge o un document).
+## Cos de la resposta (Body)
 
-## Codis d’estat de Response Http
-Els codis d'estat HTTP són respostes numèriques que el servidor envia al client per indicar l'estat de la petició. Aquests codis es poden agrupar en cinc categories, cada una amb una finalitat específica:
+El cos conté les dades que el servidor envia al client. El tipus de contingut depèn de la petició i la resposta, i pot incloure:
 
-Aquí hi han alguns exemples: 
+HTML: Quan el servidor retorna una pàgina web.
 
-### Codi d'estat 1xx - Informatius
-Els codis d'estat de la categoria 1xx indiquen que el servidor ha rebut la petició i que s'està processant. Són codis informatius, que normalment no s'utilitzen en la comunicació entre el navegador i el servidor.
-100 Continue: El servidor ha rebut la primera part de la petició i el client pot continuar enviant la resta.
+JSON: Sovint utilitzat en respostes d'APIs per enviar dades estructurades.
 
-### Codi d'estat 2xx - OK
-Els codis de la categoria 2xx indiquen que la petició s'ha processat correctament i que el servidor ha retornat una resposta satisfactòria.
+Binari: Per fitxers com imatges o documents.
 
-200 OK: La petició ha estat exitosa. El cos de la resposta conté els resultats sol·licitats.
+## Codis d’estat HTTP
+Els codis d'estat són números que el servidor utilitza per indicar el resultat de la petició. Es classifiquen en cinc categories:
 
-201 Created: La petició ha estat exitosa i ha creat un nou recurs (com en una petició POST per afegir un element).
+### 1xx - Informatius
 
-202 Accepted: La petició ha estat acceptada, però encara no s'ha processat.
+Aquests codis indiquen que la petició s'està processant. Normalment no són visibles per als usuaris finals.
 
-### Codi d'estat 3xx - Redirecció
+100 Continue: El servidor ha rebut la petició inicial, i el client pot continuar.
 
-Els codis de la categoria 3xx indiquen que el client ha de realitzar una altra acció per completar la petició. En general, aquests codis impliquen que el client ha de ser redirigit a una altra URL.
+### 2xx - Èxit
 
-301 Moved Permanently: El recurs sol·licitat ha estat mogut de manera permanent a una nova URL.
+Els codis d’aquesta categoria assenyalen que la petició ha estat processada amb èxit.
 
-302 Found (anteriorment anomenat "Moved Temporarily"): El recurs sol·licitat es troba temporalment en una URL diferent.
+200 OK: La petició ha estat satisfactòria i el contingut sol·licitat s'ha retornat.
 
-303 See Other: El client ha de realitzar una petició GET a una altra URL per obtenir el recurs.
+201 Created: La petició ha creat un nou recurs.
 
-### Codi d'estat 4xx - Errors del client
+202 Accepted: La petició s'ha acceptat, però encara no s'ha completat.
 
-Els codis de la categoria 4xx indiquen que hi ha un problema amb la petició del client. Potser falta informació o hi ha errors en la sol·licitud.
+### 3xx - Redirecció
 
-400 Bad Request: La petició és mal formada o conté dades incorrectes.
+Indiquen que el client necessita realitzar una acció addicional per accedir al recurs.
 
-401 Unauthorized: El client no ha proporcionat les credencials correctes per accedir a un recurs protegit.
+301 Moved Permanently: El recurs s'ha traslladat de forma permanent a una nova URL.
 
-403 Forbidden: El servidor entén la petició, però es nega a autoritzar-la. Potser el client no té permisos.
+302 Found: El recurs es troba temporalment en una altra ubicació.
 
-404 Not Found: El recurs sol·licitat no es troba al servidor.
+303 See Other: El client ha de fer una nova petició GET a una altra URL.
 
-### Codi d'estat 5xx - Errors del servidor
+### 4xx - Errors del client
 
-Els codis de la categoria 5xx indiquen que hi ha un problema amb el servidor que impedeix processar la petició, fins i tot si la petició era vàlida.
+Aquests codis reflecteixen problemes amb la petició enviada pel client.
 
-500 Internal Server Error: Error general del servidor. El servidor no ha pogut completar la petició per una raó desconeguda.
+400 Bad Request: La petició és incorrecta o té errors.
 
-501 Not Implemented: El servidor no suporta la funció necessària per processar la petició.
+401 Unauthorized: Calen credencials vàlides per accedir al recurs.
+
+403 Forbidden: El servidor rebutja la petició malgrat ser comprensible.
+
+404 Not Found: El recurs sol·licitat no existeix.
+
+### 5xx - Errors del servidor
+
+Aquests codis indiquen que el servidor ha tingut un problema en processar la petició.
+
+500 Internal Server Error: Un error general que impedeix completar la petició.
+
+501 Not Implemented: El servidor no admet la funcionalitat requerida per completar la petició.
+
+
+
+
+
+
+
 
 
 
