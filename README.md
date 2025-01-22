@@ -30,10 +30,18 @@ Hola Mundo!!
 
 Què necessitem per cada End-point
 
-Descripció:
-HOST: Domain port
-End-point (URL):
+Descripció: Ens diu si existeix un usuari segons el nom i l'email que li pasem.
+
+HOST: Domain port: 192.168.144.140
+
+End-point (URL): 192.168.144.140:10050/tapatapp/getuser
+
 Method: GET
-Tipus de petició (headers)
-Parametres que necessita la petició: (identifica els paràmetres i posa exemples en el cas de peticions GET)
-Resposta:
+
+Tipus de petició (headers):
+
+Parametres que necessita la petició: (identifica els paràmetres i posa exemples en el cas de peticions GET):
+Es necessita l'ID, l'username, el password i el email.
+Exemples: ID: 13828, Username: rla8436 Password: **** Email = proven@email.cat
+
+Resposta: 
