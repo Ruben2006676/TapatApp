@@ -8,6 +8,6 @@ Hola Mundo!!
 
 [Prototip 1](diagramaprototip1.mermaid)
 
-[Http Request](Http request.md)
+[Http Request](Http_Request.md)
 
-[Http Response](Http response.md)
+[Http Response](Http_Response.md)
