@@ -38,26 +38,41 @@ Els codis d'estat de la categoria 1xx indiquen que el servidor ha rebut la petic
 
 ### Codi d'estat 2xx - OK
 Els codis de la categoria 2xx indiquen que la petició s'ha processat correctament i que el servidor ha retornat una resposta satisfactòria.
+
 200 OK: La petició ha estat exitosa. El cos de la resposta conté els resultats sol·licitats.
+
 201 Created: La petició ha estat exitosa i ha creat un nou recurs (com en una petició POST per afegir un element).
+
 202 Accepted: La petició ha estat acceptada, però encara no s'ha processat.
 
 ### Codi d'estat 3xx - Redirecció
+
 Els codis de la categoria 3xx indiquen que el client ha de realitzar una altra acció per completar la petició. En general, aquests codis impliquen que el client ha de ser redirigit a una altra URL.
+
 301 Moved Permanently: El recurs sol·licitat ha estat mogut de manera permanent a una nova URL.
+
 302 Found (anteriorment anomenat "Moved Temporarily"): El recurs sol·licitat es troba temporalment en una URL diferent.
+
 303 See Other: El client ha de realitzar una petició GET a una altra URL per obtenir el recurs.
 
 ### Codi d'estat 4xx - Errors del client
+
 Els codis de la categoria 4xx indiquen que hi ha un problema amb la petició del client. Potser falta informació o hi ha errors en la sol·licitud.
+
 400 Bad Request: La petició és mal formada o conté dades incorrectes.
+
 401 Unauthorized: El client no ha proporcionat les credencials correctes per accedir a un recurs protegit.
+
 403 Forbidden: El servidor entén la petició, però es nega a autoritzar-la. Potser el client no té permisos.
+
 404 Not Found: El recurs sol·licitat no es troba al servidor.
 
 ### Codi d'estat 5xx - Errors del servidor
+
 Els codis de la categoria 5xx indiquen que hi ha un problema amb el servidor que impedeix processar la petició, fins i tot si la petició era vàlida.
+
 500 Internal Server Error: Error general del servidor. El servidor no ha pogut completar la petició per una raó desconeguda.
+
 501 Not Implemented: El servidor no suporta la funció necessària per processar la petició.
 
 
