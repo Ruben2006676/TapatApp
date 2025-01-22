@@ -2,14 +2,26 @@
 
 Hola Mundo!!
 
-## [Descripción del proyecto](DeskTop.md)
+## Descripción del proyecto
 
-## [Requeriments tècnics](req.tècnics.md)
+[Descripción del proyecto](DeskTop.md)
 
-## [Prototip 1](diagramaprototip1.mermaid)
+## Requeriments tècnics
 
-## [Model E-R](Model_E-R.PNG)
+[Requeriments tècnics](req.tècnics.md)
 
-## [Http Request](Http_Request.md)
+## Prototip 1
 
-## [Http Response](Http_Response.md)
+[Prototip 1](diagramaprototip1.mermaid)
+
+## Model E-R
+
+[Model E-R](Model_E-R.PNG)
+
+## Http Request
+
+[Http Request](Http_Request.md)
+
+## Http Response
+
+[Http Response](Http_Response.md)
