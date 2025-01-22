@@ -6,4 +6,4 @@ Hola Mundo!!
 
 [Requeriments tècnics](req.tècnics.md)
 
-[Model E-R](diagramaprototip1.md)
+[Model E-R](diagramaprototip1.mermaid)
