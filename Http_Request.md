@@ -1,11 +1,15 @@
 # 1. Http Request
-Un HTTP request és una sol·licitud que un client (normalment un navegador web o una aplicació) envia a un servidor utilitzant el protocol HTTP (HyperText Transfer Protocol). Aquesta sol·licitud permet al client demanar recursos o enviar dades al servidor, com ara pàgines web, imatges o informació per processar.
-##Components d'una HTTP request
-Mètode HTTP: Indica el tipus d'acció que el client vol fer. Els mètodes més comuns són:
-GET: Demanar dades o recursos (com una pàgina web).
-POST: Enviar dades al servidor (per exemple, formularis).
-PUT: Actualitzar recursos existents al servidor.
-DELETE: Eliminar un recurs al servidor.
-URL (Uniform Resource Locator): Especifica el recurs que es vol accedir o modificar.
-Headers: Informació addicional sobre la sol·licitud, com ara el tipus de dades acceptades, l'autenticació, o la configuració de codificació.
-Body (opcional): En cas de mètodes com POST o PUT, conté les dades que s'envien al servidor (per exemple, dades de formularis o informació en format JSON).
+Una sol·licitud HTTP és un missatge que un client (com ara un navegador web o una aplicació) envia a un servidor mitjançant el protocol HTTP (HyperText Transfer Protocol). Aquesta comunicació permet al client sol·licitar recursos o transmetre informació al servidor, com pàgines web, imatges o dades per processar.
+
+Elements d'una sol·licitud HTTP
+Mètode HTTP: Determina l'acció que el client vol executar. Els mètodes més utilitzats són:
+
+GET: Per recuperar dades o recursos (com una pàgina web).
+POST: Per enviar informació al servidor (com dades d’un formulari).
+PUT: Per modificar o substituir recursos existents al servidor.
+DELETE: Per eliminar un recurs del servidor.
+URL (Uniform Resource Locator): Indica el recurs específic al qual es vol accedir o modificar.
+
+Headers: Inclouen informació complementària sobre la sol·licitud, com el format de dades acceptat, detalls d'autenticació o configuracions específiques.
+
+Body (opcional): Conté les dades que es transmeten al servidor en mètodes com POST o PUT, com ara informació de formularis o dades estructurades en format JSON.
