@@ -6,4 +6,8 @@ Hola Mundo!!
 
 [Requeriments tècnics](req.tècnics.md)
 
-[Model E-R](diagramaprototip1.mermaid)
+[Prototip 1](diagramaprototip1.mermaid)
+
+[Http Request](Http request.md)
+
+[Http Response](Http response.md)
