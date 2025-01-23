@@ -38,10 +38,27 @@ End-point (URL): 192.168.144.140:10050/tapatapp/getuser
 
 Method: GET
 
-Tipus de petició (headers):
+Tipus de petició (headers): Accept: application/json
+Content-Type: application/json
 
 Parametres que necessita la petició: (identifica els paràmetres i posa exemples en el cas de peticions GET):
 Es necessita l'ID, l'username, el password i el email.
-Exemples: ID: 13828, Username: rla8436 Password: **** Email = proven@email.cat
+
+Exemple: GET http://192.168.144.140:10050/tapatapp/getuser?name=rla8436&email=proven@email.cat
+
 
 Resposta: 
+
+Exitosa: 
+
+{
+  "message": "Hello World: Nom:rla8436 :email = proven@email.cat"
+}
+
+
+Errònia: 
+
+{
+  "error": "Usuari no trobat"
+}
+
