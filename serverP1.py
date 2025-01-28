@@ -7,8 +7,8 @@ class User:
         self.password=password
         self.email=email
 
-    def __str__(self):
-        return "Id:" + str(self.id) + " Username:" + self.username
+#    def __str__(self):
+#        return "Id:" + str(self.id) + " Username:" + self.username
 
 listUsers= [
     User(1,"usuari1", "12345", "prova@gmail.com"),
@@ -24,12 +24,15 @@ class DAOUsers:
     def getUserByUsername(self,username):
         for u in self.users:
             if u.username == username:
+                #return u.__dict__
                 return u
         return None
 
 daoUser = DAOUsers()
 
-u=daoUser.getUserByUsername("usuari1")
+print(daoUser.getUserbyUsername("usuari1"))
+u=daoUser.getUserbyUsername("usuari1")
+
 if(u):
     print(u)
 else:
@@ -37,15 +40,15 @@ else:
 
 app = Flask(__name__)
 
-@app.route('/tapatapp/getuser', methods=['GET'])
+@app.route('/tapatapp/getuser',methods=['GET'])
 def getUser():
     n = str(request.args.get('name'))
     email = str(request.args.get('email'))
-    return "Hello World: Nom:" + n + " :email = " + email
+    return "Hello World: Nom:" + n + " : email:" + email
 
 @app.route('/prototip/getuser/<string:username>', methods=['GET'])
 def prototipGetUser(username):
-    return "Prototip 1, user: " + username
+    return jsonify(daoUser.getUserByUsername("usuari1"))
 
 if __name__ == '__main__':
      app.run(debug=True,host="0.0.0.0",port="10050")
