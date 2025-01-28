@@ -1,39 +1,42 @@
 from flask import Flask, request, jsonify
 
+# Clase User
 class User:
-    def __init__(self, id, username, password, email=""):
-        self.id=id
-        self.username=username
-        self.password=password
-        self.email=email
+    def __init__(self, id, username, password, email):
+        self.id = id
+        self.username = username
+        self.password = password
+        self.email = email
+    
+    def __str__(self):
+        return "User:" + self.username + " pass:" + self.password + " email:" + self.email
 
-#    def __str__(self):
-#        return "Id:" + str(self.id) + " Username:" + self.username
+ListUsers = [
+    User(id=1, username="usuari1", password="12345", email="prova@gmail.com"),
+    User(id=2, username="usuari2", password="123", email="usuari2@gmail.com"),
+    User(id=3, username="admin", password="12", email= "admin@proven.cat")
+    ]
 
-listUsers= [
-    User(1,"usuari1", "12345", "prova@gmail.com"),
-    User(2,"user2", "123", "user2@proven.cat"),
-    User(3,"admin","12","admin@proven.cat"),
-    User(4,"admin2","12")
-]
+for u in ListUsers:
+    print(u)
 
 class DAOUsers:
     def __init__(self):
-        self.users=listUsers
+        self.users = ListUsers
     
-    def getUserByUsername(self,username):
+    def getUserByUsername(self, username):
         for u in self.users:
             if u.username == username:
-                #return u.__dict__
                 return u
         return None
 
 daoUser = DAOUsers()
 
-print(daoUser.getUserbyUsername("usuari1"))
-u=daoUser.getUserbyUsername("usuari1")
+# Ejemplo de prueba para DAOUsers
+print(daoUser.getUserByUsername("usuari1"))
+u = daoUser.getUserByUsername("usuari1")
 
-if(u):
+if u:
     print(u)
 else:
     print("No trobat")
