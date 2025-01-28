@@ -30,7 +30,7 @@ Hola Mundo!!
 
 Què necessitem per cada End-point
 
-Descripció: Ens diu si existeix un usuari segons el nom i l'email que li pasem.
+Descripció: Obtenir dades de l'usuari
 
 HOST: Domain port: 192.168.144.140
 
