@@ -1,0 +1,28 @@
+classDiagram
+    class View {
+        +ShowInformation()
+        +ShowError()
+    }
+
+    class DAOUser {
+        -String username
+        +getUserByUsername(username: String)
+    }
+
+    class User {
+        -String username
+        -int id
+        -String email
+        -String password
+    }
+
+    class Error {
+        -int errorCode
+        -String messageCode
+    }
+
+    View --> DAOUser : Envia dades username
+    View --> User : Mostra informació de l'usuari
+
+
+
