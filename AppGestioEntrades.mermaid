@@ -9,12 +9,12 @@ classDiagram
         -String nom
         -String email
         -String contrasenya
-        +registrar(): void
-        +iniciarSessio(): boolean
+        +registrar() void
+        +iniciarSessio() boolean
     }
 
     class Client {
-        +comprarEntrada(entrada: Entrada): boolean
+        +comprarEntrada(entrada: Entrada) boolean
     }
 
     class Administrador {
@@ -38,7 +38,7 @@ classDiagram
         -float preu
         -String estat // Disponible o Venuda
         -int id
-        +marcarComVenuda(): void
-        +assignarPreu(preu: float): void
-        +getDetalls(): String
+        +marcarComVenuda() void
+        +assignarPreu(preu: float) void
+        +getDetalls() String
     }
