@@ -49,10 +49,12 @@ Exemple: GET http://192.168.144.140:10050/tapatapp/getuser?name=rla8436&email=pr
 
 Resposta: 
 
-Exitosa: 
+Exitosa: (Amb Json)
 
 {
-  "message": "Hello World: Nom:rla8436 :email = proven@email.cat"
+ 
+  "message": "Usuari trobat: Nom=usuari1, email=prova@gmail.com, ID=1, password=12345"
+
 }
 
 
@@ -65,5 +67,10 @@ Errònia:
 {
   "error": "Usuari no especificat"
 }
+
+{
+  "error": "Paràmetres incorrectes: falta el nom d'usuari"
+}
+
 
 
