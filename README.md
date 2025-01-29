@@ -62,3 +62,8 @@ Errònia:
   "error": "Usuari no trobat"
 }
 
+{
+  "error": "Usuari no especificat"
+}
+
+
