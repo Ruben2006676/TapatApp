@@ -59,11 +59,11 @@ Exitosa: (Amb Json)
 
 
 Errònia: 
-
+//Cas en que no es trobi l'usuari
 {
   "error": "Usuari no trobat"
 }
-
+//Cas en que l'usuari no l'hàgim afegit
 {
   "error": "Usuari no especificat"
 }
