@@ -52,13 +52,12 @@ Resposta:
 Exitosa: (Amb Json)
 
 {
- 
   "message": "Usuari trobat: Nom=usuari1, email=prova@gmail.com, ID=1, password=12345"
-
 }
 
 
 Errònia: 
+
 //Cas en que no es trobi l'usuari
 
 {
@@ -71,9 +70,6 @@ Errònia:
   "error": "Usuari no especificat"   -Error 400
 }
 
-{
-  "error": "Paràmetres incorrectes: falta el nom d'usuari"      -Error 400
-}
 
 
 
