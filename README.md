@@ -59,7 +59,7 @@ Errònia:
 
 Code Response Http: 404
 
-//Cas en que no es trobi l'usuari
+//Cas en que no es trobi l'usuari o no s'hagi introduit algun paràmetre.
 
 {"error": "Usuari no trobat"  }
 
