@@ -51,24 +51,21 @@ Resposta:
 
 Exitosa: (Amb Json)
 
-{
-  "message": "Usuari trobat: Nom=usuari1, email=prova@gmail.com, ID=1, password=12345"
-}
+Code Response Http: 200
 
+{"message": "Usuari trobat: Nom=usuari1, email=prova@gmail.com, ID=1, password=12345"}
 
 Errònia: 
 
+Code Response Http: 404
+
 //Cas en que no es trobi l'usuari
 
-{
-  "error": "Usuari no trobat"  -Error 404
-}
+{"error": "Usuari no trobat"  }
 
-//Cas en que l'usuari no l'hàgim afegit
+Code Response Http: 400
 
-{
-  "error": "Usuari no especificat"   -Error 400
-}
+{"error": "Paràmetre no introduit"}
 
 
 
