@@ -62,17 +62,17 @@ Errònia:
 //Cas en que no es trobi l'usuari
 
 {
-  "error": "Usuari no trobat"
+  "error": "Usuari no trobat"  -Error 404
 }
 
 //Cas en que l'usuari no l'hàgim afegit
 
 {
-  "error": "Usuari no especificat"
+  "error": "Usuari no especificat"   -Error 400
 }
 
 {
-  "error": "Paràmetres incorrectes: falta el nom d'usuari"
+  "error": "Paràmetres incorrectes: falta el nom d'usuari"      -Error 400
 }
 
 
