@@ -23,6 +23,10 @@ classDiagram
 
     View --> DAOUser : Envia dades username
     View --> User : Mostra informació de l'usuari
+    View --> Error : Mostra error
+    DAOUser --> User : Recupera dades de l'usuari
+    DAOUser --> Error : Retorna error
+
 
 
 
