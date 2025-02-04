@@ -72,6 +72,8 @@ Code Response Http : 500
 {"description": "Server Error"}
 
 
+## Diagrames de Classes Prototip 1
+
 
 
 
