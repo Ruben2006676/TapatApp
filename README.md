@@ -53,7 +53,7 @@ Exitosa: (Amb Json)
 
 Code Response Http: 200
 
-{"message": "Usuari trobat: Nom=usuari1, email=prova@gmail.com, ID=1, password=12345"}
+{ "message": "Usuari trobat", "data": { "id": 1, "username": "usuari1", "email": "prova@gmail.com", "password": "12345" }}
 
 Errònia: 
 
@@ -66,6 +66,12 @@ Code Response Http: 404
 Code Response Http: 400
 
 {"error": "Paràmetre no introduit"}
+
+{"error": "Falta paràmetre: username"}
+
+{"error": "Falta paràmetre: email"}
+
+
 
 
 
