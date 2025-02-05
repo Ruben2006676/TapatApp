@@ -1,0 +1,25 @@
+flowchart TD;
+    A[Inici Benvinguda] --> B[Login]
+    B --> C[Registre]
+    B --> H[Recuperar Contrasenya]
+
+    %% Connexió directa de Login als diferents rols %%
+    B -- Credencials Correctes --> E[Administrador]
+    B -- Credencials Correctes --> F[Usuari - Pare/Responsable]
+    B -- Credencials Correctes --> G[Metge]
+
+    %% Administrador %%
+    E --> E1[Gestió d'Usuaris]
+    E --> E2[Gestió de Permisos]
+    E --> E3[Configuració General]
+
+    %% Usuari (Pare/Responsable) %%
+    F --> F1[Seguiment del Tractament]
+    F --> F2[Exercicis Visuals]
+    F --> F3[Recordatoris i Alertes]
+
+    %% Metge %%
+    G --> G1[Consulta d'Historials]
+    G --> G2[Seguiment de Pacients]
+    G --> G3[Emetre Recomanacions]
+    G --> G4[Gestió del Tractament]
