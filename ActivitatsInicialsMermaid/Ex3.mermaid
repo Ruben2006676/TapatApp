@@ -1,0 +1,7 @@
+flowchart TD
+    A[Cuidador - Pantalla de login] -->|Envia username| B[Servidor - Controlador de Login]
+    B -->|Consulta| C[DAO Usuarios]
+    C -->|Consulta usuario| D[Base de Datos]
+    D -->|Responde usuario| C
+    C -->|Devuelve datos del usuario| B
+    B -->|Genera respuesta| E[Pantalla de Información del Infant]

@@ -1,0 +1,58 @@
+classDiagram
+    class Rol {
+        int id
+        String type_rol
+    }
+
+    class User {
+        int id
+        String username
+        String password
+        String email
+        int id_rol
+    }
+
+    class RelationUserChild {
+        int user_id
+        int child_id
+        int rol_id
+    }
+
+    class Child {
+        int id
+        String child_name
+        int sleep_average
+        int treatment_id
+        int time
+    }
+
+    class Treatment {
+        int id
+        String name
+    }
+
+    class Status {
+        int id
+        String name
+    }
+
+    class Tap {
+        int id
+        int child_id
+        int status_id
+        int user_id
+        datetime init
+        datetime end
+    }
+
+    Rol "1" --> "0..*" User : tieneRol
+    User "1" --> "0..*" RelationUserChild : le_asignan
+    Child "1" --> "0..*" RelationUserChild : esAsignado
+    RelationUserChild "0..*" --> "1" Rol : tieneRol
+    Child "1" --> "0..*" Tap : tiene
+    Treatment "1" --> "0..*" Child : aplica
+    Status "1" --> "0..*" Tap : tiene
+    User "1" --> "0..*" Tap : supervisa
+
+    
+
