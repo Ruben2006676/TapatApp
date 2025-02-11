@@ -1,25 +1,44 @@
 flowchart TD;
-    A[Inici Benvinguda] --> B[Login]
-    B --> C[Registre]
-    B --> H[Recuperar Contrasenya]
+    
+    %% Conexiones principales
+    A --> B
+    B --> C
+    B --> D
+    C --> B
+    D --> B
+    B --> E
+    E --> F
+    E --> I
+    I --> G
+    G --> H
+    
+    %% Subgrupos para mejorar estructura
+    subgraph Inici
+        A[Inici, Benvinguda]
+    end
 
-    %% Connexió directa de Login als diferents rols %%
-    B -- Credencials Correctes --> E[Administrador]
-    B -- Credencials Correctes --> F[Usuari - Pare/Responsable]
-    B -- Credencials Correctes --> G[Metge]
+    subgraph Login
+        B{Login<br>Usuari i contrasenya}
+    end
 
-    %% Administrador %%
-    E --> E1[Gestió d'Usuaris]
-    E --> E2[Gestió de Permisos]
-    E --> E3[Configuració General]
+    subgraph Registre
+        C[Registre<br>Nom, Cognom, Email, Contrasenya]
+    end
 
-    %% Usuari (Pare/Responsable) %%
-    F --> F1[Seguiment del Tractament]
-    F --> F2[Exercicis Visuals]
-    F --> F3[Recordatoris i Alertes]
+    subgraph RecuperarContrasenya
+        D{Recuperar Contrasenya<br>Email, Codi de Recuperació}
+    end
 
-    %% Metge %%
-    G --> G1[Consulta d'Historials]
-    G --> G2[Seguiment de Pacients]
-    G --> G3[Emetre Recomanacions]
-    G --> G4[Gestió del Tractament]
+    subgraph Usuari
+        E{Usuari<br>Nom, Cognom, Email}
+        I{Llista de Nens<br>Nom, Edat, Data de Naixement}
+        G{Informació Nen<br>Nom, Edat, Data de Naixement, Informació Mèdica}
+    end
+
+    subgraph Perfil
+        F{Veure Perfil<br>Nom, Cognom, Email, Altres dades}
+    end
+
+    subgraph Nen
+        H{Historial del Tapat<br>Data, Hora, Estat, Total d'hores}
+    end
