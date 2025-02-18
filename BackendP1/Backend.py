@@ -7,11 +7,11 @@ class User:
         self.username = username
         self.password = password
         self.email = email
-
+    
     def __str__(self):
         return f"User: {self.username} pass: {self.password} email: {self.email}"
-
-    def to_dict(self):  # Devuelve solo los datos necesarios
+    
+    def to_dict(self):  # Pasamos a diccionario los datos para que jsonify funcione correctamente.
         return {
             "id": self.id,
             "username": self.username,
@@ -25,17 +25,17 @@ ListUsers = [
     User(id=3, username="admin", password="12", email="admin@proven.cat")
 ]
 
+# Se imprimen los usuarios al inicio para verificar
+for u in ListUsers:
+    print(u)
+
 # Clase DAOUsers para gestionar la obtención de usuarios
 class DAOUsers:
     def __init__(self):
         self.users = ListUsers
-
-    def get_user_data(self, username):
-        """Busca un usuario por username y devuelve solo id, username y email."""
-        for user in self.users:
-            if user.username == username:
-                return user.to_dict()  # Devolvemos solo los datos necesarios
-        return None  # Si no se encuentra, devolvemos None
+    
+    def getUserByUsername(self, username):
+        return next((u for u in self.users if u.username == username), None)
 
 # Instancia del DAOUsers
 daoUser = DAOUsers()
@@ -47,29 +47,32 @@ app = Flask(__name__)
 @app.route('/tapatapp/getuser', methods=['GET'])
 def getUser():
     try:
-        # Obtenemos los parámetros 'username' y 'email' de la consulta
-        username = request.args.get('username')
-        email = request.args.get('email')
+        name = request.args.get('name', '').strip()
+        email = request.args.get('email', '').strip()
+        password = request.args.get('password', '').strip()
 
-        # Validación de los parámetros
-        if not username or not email:
-            return jsonify({"error": "Paràmetre no introduit"}), 400  # Respuesta si falta algún parámetro
+        if not name or not email or not password:
+            return jsonify({"error": "Falta algún parámetro"}), 400
+        
+        user = daoUser.getUserByUsername(name)
 
-        # Buscamos los datos del usuario
-        user_data = daoUser.get_user_data(username)
+        if user is None:
+            return jsonify({"error": "Usuario no encontrado"}), 404
 
-        if user_data and user_data["email"] == email:
-            # Si encontramos al usuario y el email coincide
-            return jsonify({
-                "message": f"Usuari trobat: Nom={user_data['username']}, email={user_data['email']}, ID={user_data['id']}"
-            }), 200
-        else:
-            # Si no se encuentra al usuario o el email no coincide
-            return jsonify({"error": "Usuari no trobat"}), 404
+        if user.email != email:
+            return jsonify({"error": "Email incorrecto"}), 401
+
+        if user.password != password:
+            return jsonify({"error": "Contraseña incorrecta"}), 401
+
+        return jsonify({
+            "message": "Usuario encontrado",
+            "user": user.to_dict()
+        }), 200
 
     except Exception as e:
-        # Errores internos del servidor
-        return jsonify({"description": "Server Error"}), 500
+        print(f"Error inesperado: {e}")
+        return jsonify({"description": "Error interno del servidor"}), 500
 
 # Arrancamos el servidor en el puerto 10050, según tu configuración de host.
 if __name__ == '__main__':
