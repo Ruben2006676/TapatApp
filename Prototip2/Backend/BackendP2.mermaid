@@ -1,0 +1,78 @@
+classDiagram
+    %% Classes principals
+    class Inici {
+        +String missatgeBenvinguda
+    }
+
+
+    class Login {
+        +String usuari
+        +String contrasenya
+        +boolean validarCredencials()
+    }
+
+
+    class Registre {
+        +String nom
+        +String cognom
+        +String email
+        +String contrasenya
+        +boolean registrarUsuari()
+    }
+
+
+    class RecuperarContrasenya {
+        +String email
+        +String codiRecuperacio
+        +boolean enviarCodi()
+        +boolean canviarContrasenya()
+    }
+
+
+    class Usuari {
+        +String nom
+        +String cognom
+        +String email
+        +Llista~Nen~ llistaNens
+        +void afegirNen(Nen nen)
+    }
+
+
+    class Perfil {
+        +String nom
+        +String cognom
+        +String email
+        +String altresDades
+        +void veurePerfil()
+        +void afegirNen(Nen nen)
+    }
+
+
+    class Nen {
+        +String nom
+        +int edat
+        +Date dataNaixement
+        +String informacioMedica
+        +Llista~HistorialTapat~ historialTapat
+        +void afegirHistorial(HistorialTapat historial)
+    }
+
+
+    class HistorialTapat {
+        +Date data
+        +Time hora
+        +String estat
+        +int totalHores
+    }
+
+
+    %% Relacions entre classes
+    Inici --> Login
+    Login --> Registre
+    Login --> RecuperarContrasenya
+    Login --> Usuari
+    Registre --> Nen
+    Usuari --> Nen
+    Usuari --> Perfil
+    Perfil --> Nen
+    Nen --> HistorialTapat
