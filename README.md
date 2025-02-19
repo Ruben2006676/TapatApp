@@ -80,6 +80,9 @@ Code Response Http : 500
 
 ## Diagrames de Classes Prototip 1
 
+[Diagrama Backend P1](./BackendP1/BackEnd.mermaid)
+
+[Diagrama Frontend P1](./FrontendP1/FrontEnd.mermaid)
 
 # PROTOTIP 2 
 
