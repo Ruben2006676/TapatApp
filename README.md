@@ -176,7 +176,7 @@ Permet a l'usuari afegir un nou nen al perfil.
 
 Camps per introduir nom, edat i data de naixement.
 
-## Descripció del Prototip 2 ((Descripció de que volem implementar al prototip 2)
+## Descripció del Prototip 2 (Descripció de que volem implementar al prototip 2)
 
 El Prototip 2 es basa en la creació d'una plataforma senzilla i intuïtiva per a la gestió d'usuaris i nens, pensada per a facilitar el registre, la gestió del perfil d'usuari i la informació dels nens, així com la possibilitat de visualitzar històrics d'intervencions o seguiment de la salut dels nens. A continuació es detallen les funcions clau que es volen implementar, basant-se en els wireframes creats.
 
