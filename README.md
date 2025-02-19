@@ -85,7 +85,7 @@ Code Response Http : 500
 
 ## WIREFRAMES
 
-[Wireframes](Wireframes.mermaid)
+[Wireframes.mermaid](./Wireframes/Wireframes.mermaid)
 
 Inici:
 
