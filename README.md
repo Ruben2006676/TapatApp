@@ -53,7 +53,13 @@ Exitosa: (Amb Json)
 
 Code Response Http: 200
 
-{"message": "Usuari trobat: Nom=usuari1, email=prova@gmail.com, ID=1, password=12345"}
+{
+    "id": 2,
+    "username": "usuari2",
+    "email": "usuari2@gmail.com",
+    "password": "123"
+}
+
 
 Errònia: 
 
