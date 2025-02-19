@@ -84,6 +84,12 @@ Code Response Http : 500
 
 [Diagrama Frontend P1](./FrontendP1/FrontEnd.mermaid)
 
+## Implementació Python Backend i Frontend P1
+
+[Backend P1](./BackendP1/Backend.py)
+
+[Frontend P1](./FrontendP1/FrontEnd.py)
+
 # PROTOTIP 2 
 
 ## WIREFRAMES
