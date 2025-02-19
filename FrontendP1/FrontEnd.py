@@ -2,14 +2,14 @@ import requests
 
 # Clase User
 class User:
-    def __init__(self, id, username, password, email):
+    def __init__(self, id, username, email, password):
         self.id = id
         self.username = username
-        self.password = password
         self.email = email
-    
+        self.password = password  # Ahora también mostramos la contraseña
+
     def __str__(self):
-        return f"Id: {self.id}, Username: {self.username}, Password: {self.password}, Email: {self.email}"
+        return f"Id: {self.id}, Username: {self.username}, Email: {self.email}, Password: {self.password}"
 
 # Clase Error
 class Error:
@@ -20,53 +20,60 @@ class Error:
 # Clase DaoUser
 class DaoUser:
     def __init__(self):
-        self.base_url = "http://localhost:10050/prototip1/getuser"  # URL del Backend
+        # URL del Backend
+        self.base_url = "http://127.0.0.1:10050/tapatapp/getuser"
 
-    def getUserByUsername(self, username):
-        # Realiza la solicitud HTTP al Backend para obtener información del usuario
-        response = requests.get(self.base_url, params={"username": username})
-        
-        if response.status_code == 200:
-            user_data = response.json()
-            return User(user_data['id'], user_data['username'], user_data['password'], user_data['email'])
-        else:
-            # Si el usuario no se encuentra, devuelve un error
-            return Error(response.status_code, "User not found")
+    def getUserByCredentials(self, username, email, password):
+        try:
+            # Validar que los campos no estén vacíos
+            if not username or not email or not password:
+                return Error(400, "Todos los campos son obligatorios")
 
-# Clase View (Console)
+            params = {"username": username, "email": email, "password": password}
+            response = requests.get(self.base_url, params=params)
+
+            if response.status_code == 200:
+                user_data = response.json()
+                return User(user_data.get('id'), user_data.get('username'), user_data.get('email'), password)
+            elif response.status_code in [400, 401, 404]:
+                return Error(response.status_code, response.json().get("error", "Error desconocido"))
+            else:
+                return Error(response.status_code, "Error desconocido en el servidor")
+        except requests.exceptions.ConnectionError:
+            return Error(500, "Error de conexión: No se pudo conectar con el servidor")
+        except requests.exceptions.RequestException as e:
+            return Error(500, f"Error inesperado: {str(e)}")
+
+# Clase View (Consola)
 class View:
-    def __init__(self):
-        self.username = ""
-        
-    def getUsernameByConsole(self):
-        # Obtiene el username ingresado por el usuario desde la consola
-        return input("Enter username: ")
+    def getCredentialsByConsole(self):
+        username = input("Ingrese el nombre de usuario: ").strip()
+        email = input("Ingrese el email: ").strip()
+        password = input("Ingrese la contraseña: ").strip()
+        return username, email, password
     
     def UserInfo(self, user):
-        # Muestra la información del usuario
         if isinstance(user, User):
-            print(f"User Info: {user}")
+            print(f"\nUsuario encontrado:\n{user}")
         else:
-            print("User not found.")
-    
+            print("\nUsuario no encontrado.")
+
     def ErrorInfo(self, error):
-        # Muestra los detalles del error
         if isinstance(error, Error):
-            print(f"Error {error.codeError}: {error.description}")
+            print(f"\nError {error.codeError}: {error.description}")
 
 # Función principal
 if __name__ == "__main__":
-    # Crear las instancias de las clases
     view = View()
     dao_user = DaoUser()
 
-    # Paso 1: Obtener el username desde la consola
-    username = view.getUsernameByConsole()
+    # Obtener credenciales del usuario
+    username, email, password = view.getCredentialsByConsole()
 
-    # Paso 2: Obtener la información del usuario a partir del username
-    user = dao_user.getUserByUsername(username)
+    # Obtener usuario del backend
+    user = dao_user.getUserByCredentials(username, email, password)
 
-    # Paso 3: Mostrar la información del usuario o el error
+    # Mostrar resultado
     if isinstance(user, User):
         view.UserInfo(user)
     elif isinstance(user, Error):
