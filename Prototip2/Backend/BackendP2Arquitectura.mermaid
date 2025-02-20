@@ -1,0 +1,29 @@
+classDiagram
+    class WebService {
+    }
+
+    class DAOUsers {
+    }
+
+    class DAOChilds {
+    }
+
+    class DAOTaps {
+    }
+
+    class Users {
+    }
+
+    class Child {
+    }
+
+    class Tap {
+    }
+
+    WebService --> DAOUsers : Consulta a
+    WebService --> DAOChilds : Consulta a
+    WebService --> DAOTaps : Consulta a
+
+    DAOUsers --> Users : Gestiona
+    DAOChilds --> Child : Gestiona
+    DAOTaps --> Tap : Gestiona
