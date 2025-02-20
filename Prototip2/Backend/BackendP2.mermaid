@@ -1,6 +1,6 @@
 classDiagram
     class WebService {
-        +get_user_by_id(id: int): User
+        +get_user_by_id(id: int) User
         +get_child_by_id(child_id: int)
         +get_tap_history(child_id: int)
         +create_user(user: User)
@@ -10,23 +10,23 @@ classDiagram
 
     class DAOUsers {
         - users: list
-        + get_user_by_id(id: int): User
-        + create_user(user: User): bool
-        + update_user(user: User): bool
+        + get_user_by_id(id: int) User
+        + create_user(user: User) bool
+        + update_user(user: User) bool
     }
 
     class DAOChilds {
         - children: list
-        + get_child_by_id(child_id: int): Child
-        + create_child(child: Child): bool
-        + update_child(child: Child): bool
+        + get_child_by_id(child_id: int) Child
+        + create_child(child: Child) bool
+        + update_child(child: Child) bool
     }
 
     class DAOTaps {
         - taps: list
-        + get_tap_history(child_id: int): list<Tap>
-        + create_tap(tap: Tap): bool
-        + update_tap(tap: Tap): bool
+        + get_tap_history(child_id: int) list<Tap>
+        + create_tap(tap: Tap) bool
+        + update_tap(tap: Tap) bool
     }
 
     class Users {
