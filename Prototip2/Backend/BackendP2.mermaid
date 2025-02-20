@@ -1,78 +1,64 @@
 classDiagram
-    %% Classes principals
-    class Inici {
-        +String missatgeBenvinguda
+    class WebService {
+        +get_user_by_id(id: int): User
+        +get_child_by_id(child_id: int)
+        +get_tap_history(child_id: int)
+        +create_user(user: User)
+        +create_child(child: Child)
+        +create_tap(tap: Tap)
     }
 
-
-    class Login {
-        +String usuari
-        +String contrasenya
-        +boolean validarCredencials()
+    class DAOUsers {
+        - users: list
+        + get_user_by_id(id: int): User
+        + create_user(user: User): bool
+        + update_user(user: User): bool
     }
 
-
-    class Registre {
-        +String nom
-        +String cognom
-        +String email
-        +String contrasenya
-        +boolean registrarUsuari()
+    class DAOChilds {
+        - children: list
+        + get_child_by_id(child_id: int): Child
+        + create_child(child: Child): bool
+        + update_child(child: Child): bool
     }
 
-
-    class RecuperarContrasenya {
-        +String email
-        +String codiRecuperacio
-        +boolean enviarCodi()
-        +boolean canviarContrasenya()
+    class DAOTaps {
+        - taps: list
+        + get_tap_history(child_id: int): list<Tap>
+        + create_tap(tap: Tap): bool
+        + update_tap(tap: Tap): bool
     }
 
-
-    class Usuari {
-        +String nom
-        +String cognom
-        +String email
-        +Llista~Nen~ llistaNens
-        +void afegirNen(Nen nen)
+    class Users {
+        - id: int
+        - username: string
+        - password: string
+        - email: string
+        - first_name: string
+        - last_name: string
     }
 
-
-    class Perfil {
-        +String nom
-        +String cognom
-        +String email
-        +String altresDades
-        +void veurePerfil()
-        +void afegirNen(Nen nen)
+    class Child {
+        - id: int
+        - user_id: int
+        - name: string
+        - birth_date: date
+        - medical_info: string
     }
 
-
-    class Nen {
-        +String nom
-        +int edat
-        +Date dataNaixement
-        +String informacioMedica
-        +Llista~HistorialTapat~ historialTapat
-        +void afegirHistorial(HistorialTapat historial)
+    class Tap {
+        - id: int
+        - child_id: int
+        - date: date
+        - time: string
+        - status: string
+        - total_hours: float
     }
 
+    WebService --> DAOUsers : Consulta a
+    WebService --> DAOChilds : Consulta a
+    WebService --> DAOTaps : Consulta a
 
-    class HistorialTapat {
-        +Date data
-        +Time hora
-        +String estat
-        +int totalHores
-    }
-
-
-    %% Relacions entre classes
-    Inici --> Login
-    Login --> Registre
-    Login --> RecuperarContrasenya
-    Login --> Usuari
-    Registre --> Nen
-    Usuari --> Nen
-    Usuari --> Perfil
-    Perfil --> Nen
-    Nen --> HistorialTapat
+    DAOUsers --> Users : Gestiona
+    DAOChilds --> Child : Gestiona
+    DAOTaps --> Tap : Gestiona
