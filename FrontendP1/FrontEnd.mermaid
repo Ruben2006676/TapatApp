@@ -1,6 +1,4 @@
 classDiagram
-    Diagrama de clases FrontEnd del Prototip 1
-    
     class User {
         +int id
         +String username
@@ -26,4 +24,4 @@ classDiagram
     }
 
     View --|> DaoUser 
-    DaoUser --|> View 
+    DaoUser --|> User  // Ahora DaoUser está conectado con User
