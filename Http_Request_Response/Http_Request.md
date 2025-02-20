@@ -1,20 +1,22 @@
 # 1. Http Request
-Una sol·licitud HTTP és un missatge que un client (com ara un navegador web o una aplicació) envia a un servidor mitjançant el protocol HTTP (HyperText Transfer Protocol). Aquesta comunicació permet al client sol·licitar recursos o transmetre informació al servidor, com pàgines web, imatges o dades per processar.
+## Petició HTTP
 
-Elements d'una sol·licitud HTTP
+Una petició HTTP és un missatge que un client (com un navegador web o una aplicació) envia a un servidor per sol·licitar informació o enviar dades. Aquesta comunicació es basa en el protocol HTTP (HyperText Transfer Protocol) i permet obtenir recursos com pàgines web, imatges o enviar dades per processar.
 
-Mètode HTTP: Determina l'acció que el client vol executar. Els mètodes més utilitzats són:
+### Parts d'una petició HTTP
 
-GET: Per recuperar dades o recursos (com una pàgina web).
+Mètode HTTP: Indica l'acció que el client vol realitzar. Els més comuns són:
 
-POST: Per enviar informació al servidor (com dades d’un formulari).
+GET: Obté dades o recursos (per exemple, carregar una pàgina web).
 
-PUT: Per modificar o substituir recursos existents al servidor.ç
+POST: Envia informació al servidor (com dades d'un formulari).
 
-DELETE: Per eliminar un recurs del servidor.
+PUT: Modifica o actualitza un recurs existent.
 
-URL (Uniform Resource Locator): Indica el recurs específic al qual es vol accedir o modificar.
+DELETE: Elimina un recurs del servidor.
 
-Headers: Inclouen informació complementària sobre la sol·licitud, com el format de dades acceptat, detalls d'autenticació o configuracions específiques.
+URL (Uniform Resource Locator): És l'adreça del recurs al qual es vol accedir o modificar.
 
-Body (opcional): Conté les dades que es transmeten al servidor en mètodes com POST o PUT, com ara informació de formularis o dades estructurades en format JSON.
+Headers: Contenen informació extra sobre la petició, com el tipus de dades acceptades, autenticació o configuracions específiques.
+
+Body (cos de la petició, opcional): Només present en mètodes com POST o PUT, inclou dades enviades al servidor, per exemple, informació de formularis o fitxers en format JSON.
