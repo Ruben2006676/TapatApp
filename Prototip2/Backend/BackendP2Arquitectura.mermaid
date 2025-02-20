@@ -1,8 +1,8 @@
 flowchart TD
-    WebService --> DAOUsers : Consulta a
-    WebService --> DAOChilds : Consulta a
-    WebService --> DAOTaps : Consulta a
+    A[WebService] --> B[DAOUsers] : Consulta a
+    A --> C[DAOChilds] : Consulta a
+    A --> D[DAOTaps] : Consulta a
 
-    DAOUsers --> Users : Gestiona
-    DAOChilds --> Child : Gestiona
-    DAOTaps --> Tap : Gestiona
+    B --> E[Users] : Gestiona
+    C --> F[Child] : Gestiona
+    D --> G[Tap] : Gestiona
