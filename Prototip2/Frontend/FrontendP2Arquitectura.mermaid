@@ -1,65 +1,12 @@
-classDiagram
-    class User {
-        +int id
-        +String username
-        +String email
-        +String password
-        +String firstName
-        +String lastName
-    }
+flowchart TD
+    A[View] --> B[WebService]
+    B --> C[DAOUsers] 
+    B --> D[DAOChilds] 
+    B --> E[DAOTaps] 
 
-    class Child {
-        +int id
-        +int userId
-        +String name
-        +String birthDate
-        +String medicalInfo
-    }
+    C --> F[Users] 
+    D --> G[Childs] 
+    E --> H[Taps]  
 
-    class Tap {
-        +int id
-        +int childId
-        +String date
-        +String time
-        +String status
-        +float totalHours
-    }
+    I[Error]
 
-    class Error {
-        +int codeError
-        +String description
-    }
-
-    class View {
-        +showUserInfo(user: User)
-        +showChildInfo(child: Child)
-        +showTapHistory(tapList: List<Tap>)
-        +showError(error: Error)
-    }
-
-    class WebService {
-        +getUserByEmail(email: String)
-        +getChildById(childId: int)
-        +getTapHistory(childId: int)
-    }
-
-    class DaoUser {
-        +getUserByEmail(email: String)
-    }
-
-    class DaoChild {
-        +getChildById(childId: int)
-    }
-
-    class DaoTap {
-        +getTapHistory(childId: int)
-    }
-
-    View --> WebService : Llama a
-    WebService --> DaoUser : Consulta a
-    WebService --> DaoChild : Consulta a
-    WebService --> DaoTap : Consulta a
-
-    DaoUser --> User : Gestiona
-    DaoChild --> Child : Gestiona
-    DaoTap --> Tap : Gestiona
