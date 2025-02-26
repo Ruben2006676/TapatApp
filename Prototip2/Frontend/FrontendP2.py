@@ -1,196 +1,178 @@
 import requests
 
-# Clase User
-class User:
-    def __init__(self, id, username, email, password, first_name, last_name):
+# Classe Usuari
+class Usuari:
+    def __init__(self, id, nom_usuari, correu, contrasenya, nom, cognom):
         self.id = id
-        self.username = username
-        self.email = email
-        self.password = password
-        self.first_name = first_name
-        self.last_name = last_name
+        self.nom_usuari = nom_usuari
+        self.correu = correu
+        self.contrasenya = contrasenya
+        self.nom = nom
+        self.cognom = cognom
 
     def __str__(self):
-        return (f"Id: {self.id}, Username: {self.username}, Email: {self.email}, "
-                f"Nombre: {self.first_name} {self.last_name}")
+        return (f"Id: {self.id}, Nom d'usuari: {self.nom_usuari}, Correu: {self.correu}, "
+                f"Nom: {self.nom} {self.cognom}")
 
-# Clase Child
-class Child:
-    def __init__(self, id, user_id, name, birth_date, medical_info):
+# Classe Nen
+class Nen:
+    def __init__(self, id, usuari_id, nom, data_naixement, informacio_medica):
         self.id = id
-        self.user_id = user_id
-        self.name = name
-        self.birth_date = birth_date
-        self.medical_info = medical_info
+        self.usuari_id = usuari_id
+        self.nom = nom
+        self.data_naixement = data_naixement
+        self.informacio_medica = informacio_medica
 
     def __str__(self):
-        return (f"Id: {self.id}, Nombre: {self.name}, "
-                f"Fecha de Nacimiento: {self.birth_date}, "
-                f"Información Médica: {self.medical_info}")
+        return (f"Id: {self.id}, Nom: {self.nom}, "
+                f"Data de Naixement: {self.data_naixement}, "
+                f"Informació Mèdica: {self.informacio_medica}")
 
-# Clase Tap
+# Classe Tap
 class Tap:
-    def __init__(self, id, child_id, date, time, status, total_hours):
+    def __init__(self, id, nen_id, data, hora, estat, hores_totals):
         self.id = id
-        self.child_id = child_id
-        self.date = date
-        self.time = time
-        self.status = status
-        self.total_hours = total_hours
+        self.nen_id = nen_id
+        self.data = data
+        self.hora = hora
+        self.estat = estat
+        self.hores_totals = hores_totals
 
     def __str__(self):
-        return (f"Id: {self.id}, Fecha: {self.date}, Hora: {self.time}, "
-                f"Estado: {self.status}, Horas Totales: {self.total_hours}")
+        return (f"Id: {self.id}, Data: {self.data}, Hora: {self.hora}, "
+                f"Estat: {self.estat}, Hores Totals: {self.hores_totals}")
 
-# Clase Error
+# Classe Error
 class Error:
-    def __init__(self, code_error, description):
-        self.code_error = code_error
-        self.description = description
+    def __init__(self, codi_error, descripcio):
+        self.codi_error = codi_error
+        self.descripcio = descripcio
 
     def __str__(self):
-        return f"Error {self.code_error}: {self.description}"
+        return f"Error {self.codi_error}: {self.descripcio}"
 
-# Clase DaoUser
-class DaoUser:
+# Classe DaoUsuari
+class DaoUsuari:
     def __init__(self):
         self.base_url = "http://127.0.0.1:5000"
 
-    def get_user_by_credentials(self, user_id, password):
+    def obtenir_usuari_per_credencials(self, usuari_id, contrasenya):
         try:
-            response = requests.post(
-                f"{self.base_url}/login",
-                json={"id": user_id, "password": password}
+            resposta = requests.post(
+                f"{self.base_url}/iniciar_sessio",
+                json={"id": usuari_id, "contrasenya": contrasenya}
             )
 
-            if response.status_code == 200:
-                user_data = response.json().get("user")
-                return User(
-                    user_data.get("id"),
-                    user_data.get("username"),
-                    user_data.get("email"),
-                    password,
-                    user_data.get("first_name"),
-                    user_data.get("last_name")
+            if resposta.status_code == 200:
+                dades_usuari = resposta.json().get("usuari")
+                return Usuari(
+                    dades_usuari.get("id"),
+                    dades_usuari.get("nom_usuari"),
+                    dades_usuari.get("correu"),
+                    contrasenya,
+                    dades_usuari.get("nom"),
+                    dades_usuari.get("cognom")
                 )
             else:
-                return Error(response.status_code, response.json().get("error", "Error desconocido"))
+                return Error(resposta.status_code, resposta.json().get("error", "Error desconegut"))
         except requests.exceptions.ConnectionError:
-            return Error(500, "Error de conexión: No se pudo conectar con el servidor")
+            return Error(500, "Error de connexió: No es va poder connectar amb el servidor")
         except requests.exceptions.RequestException as e:
-            return Error(500, f"Error inesperado: {str(e)}")
+            return Error(500, f"Error inesperat: {str(e)}")
 
-# Clase DaoChild
-class DaoChild:
+# Classe DaoNen
+class DaoNen:
     def __init__(self):
         self.base_url = "http://127.0.0.1:5000"
 
-    def get_children_by_user(self, user_id):
+    def obtenir_nens_per_usuari(self, usuari_id):
         try:
-            response = requests.get(
-                f"{self.base_url}/child",
-                params={"user_id": user_id}
+            resposta = requests.get(
+                f"{self.base_url}/nen",
+                params={"usuari_id": usuari_id}
             )
 
-            if response.status_code == 200:
-                children_data = response.json()
-                return [Child(
-                    child.get("id"),
-                    child.get("user_id"),
-                    child.get("name"),
-                    child.get("birth_date"),
-                    child.get("medical_info")
-                ) for child in children_data]
+            if resposta.status_code == 200:
+                nens_dades = resposta.json()
+                return [Nen(
+                    nen.get("id"),
+                    nen.get("usuari_id"),
+                    nen.get("nom"),
+                    nen.get("data_naixement"),
+                    nen.get("informacio_medica")
+                ) for nen in nens_dades]
             else:
-                return Error(response.status_code, response.json().get("error", "Error desconocido"))
+                return Error(resposta.status_code, resposta.json().get("error", "Error desconegut"))
         except requests.exceptions.ConnectionError:
-            return Error(500, "Error de conexión: No se pudo conectar con el servidor")
+            return Error(500, "Error de connexió: No es va poder connectar amb el servidor")
         except requests.exceptions.RequestException as e:
-            return Error(500, f"Error inesperado: {str(e)}")
+            return Error(500, f"Error inesperat: {str(e)}")
 
-# Clase DaoTap
+# Classe DaoTap
 class DaoTap:
     def __init__(self):
         self.base_url = "http://127.0.0.1:5000"
 
-    def get_tap_history_by_user(self, user_id):
+    def obtenir_historial_taps_per_usuari(self, usuari_id):
         try:
-            response = requests.get(
-                f"{self.base_url}/tap/history",
-                params={"user_id": user_id}
+            resposta = requests.get(
+                f"{self.base_url}/tap/historial",
+                params={"usuari_id": usuari_id}
             )
 
-            if response.status_code == 200:
-                tap_history_data = response.json()
+            if resposta.status_code == 200:
+                taps_dades = resposta.json()
                 return [Tap(
                     tap.get("id"),
-                    tap.get("child_id"),
-                    tap.get("date"),
-                    tap.get("time"),
-                    tap.get("status"),
-                    tap.get("total_hours")
-                ) for tap in tap_history_data]
+                    tap.get("nen_id"),
+                    tap.get("data"),
+                    tap.get("hora"),
+                    tap.get("estat"),
+                    tap.get("hores_totals")
+                ) for tap in taps_dades]
             else:
-                return Error(response.status_code, response.json().get("error", "Error desconocido"))
+                return Error(resposta.status_code, resposta.json().get("error", "Error desconegut"))
         except requests.exceptions.ConnectionError:
-            return Error(500, "Error de conexión: No se pudo conectar con el servidor")
+            return Error(500, "Error de connexió: No es va poder connectar amb el servidor")
         except requests.exceptions.RequestException as e:
-            return Error(500, f"Error inesperado: {str(e)}")
+            return Error(500, f"Error inesperat: {str(e)}")
 
-# Clase View (Consola)
-class View:
-    def get_credentials_by_console(self):
-        user_id = int(input("Ingrese el ID de usuario: ").strip())
-        password = input("Ingrese la contraseña: ").strip()
-        return user_id, password
+# Classe Vista (Consola)
+class Vista:
+    def obtenir_credencials_per_consola(self):
+        usuari_id = int(input("Introdueix l'ID d'usuari: ").strip())
+        contrasenya = input("Introdueix la contrasenya: ").strip()
+        return usuari_id, contrasenya
 
-    def show_user_info(self, user):
-        if isinstance(user, User):
-            print(f"\nInformación del Usuario:\n{user}")
+    def mostrar_info_usuari(self, usuari):
+        if isinstance(usuari, Usuari):
+            print(f"\nInformació de l'usuari:\n{usuari}")
         else:
-            print("\nNo se pudo obtener la información del usuario.")
+            print("\nNo s'ha pogut obtenir la informació de l'usuari.")
 
-    def show_children_info(self, children):
-        if isinstance(children, list):
-            print("\nInformación de los Niños:")
-            for child in children:
-                print(child)
+    def mostrar_info_nens(self, nens):
+        if isinstance(nens, list):
+            print("\nInformació dels nens:")
+            for nen in nens:
+                print(nen)
         else:
-            print("\nNo se pudo obtener la información de los niños.")
+            print("\nNo s'ha pogut obtenir la informació dels nens.")
 
-    def show_tap_history(self, tap_history):
-        if isinstance(tap_history, list):
-            print("\nHistorial de Taps:")
-            for tap in tap_history:
+    def mostrar_historial_taps(self, historial_taps):
+        if isinstance(historial_taps, list):
+            print("\nHistorial de taps:")
+            for tap in historial_taps:
                 print(tap)
         else:
-            print("\nNo se pudo obtener el historial de taps.")
+            print("\nNo s'ha pogut obtenir l'historial de taps.")
 
-    def show_error(self, error):
-        if isinstance(error, Error):
-            print(f"\n{error}")
-
-# Función principal
+# Funció principal
 if __name__ == "__main__":
-    view = View()
-    dao_user = DaoUser()
-    dao_child = DaoChild()
+    vista = Vista()
+    dao_usuari = DaoUsuari()
+    dao_nen = DaoNen()
     dao_tap = DaoTap()
 
-    # Obtener credenciales del usuario
-    user_id, password = view.get_credentials_by_console()
-
-    # Obtener usuario del backend
-    user = dao_user.get_user_by_credentials(user_id, password)
-
-    # Mostrar información del usuario
-    view.show_user_info(user)
-
-    if isinstance(user, User):
-        # Obtener información de los niños
-        children = dao_child.get_children_by_user(user.id)
-        view.show_children_info(children)
-
-        # Obtener historial de taps
-        tap_history = dao_tap.get_tap_history_by_user(user.id)
-        view.show_tap_history(tap_history)
+    usuari_id, contrasenya = vista.obtenir_credencials_per_consola()
+    usuari = dao_usuari.obtenir_usuari_per_credencials(usuari_id, contrasenya)
+    vista.mostrar_info_usuari(usuari)
