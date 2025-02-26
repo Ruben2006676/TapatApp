@@ -39,10 +39,26 @@ class Tap:
     def to_dict(self):
         return self.__dict__
 
+# Listas de datos
+users = [
+    User(id=1, username="mare", password="12345", email="prova@gmail.com", first_name="Mare", last_name="Prova"),
+    User(id=2, username="pare", password="123", email="prova2@gmail.com", first_name="Pare", last_name="Prova")
+]
+
+children = [
+    Child(id=1, user_id=1, name="Carol Child", birth_date="2015-03-15", medical_info="Ninguna"),
+    Child(id=2, user_id=2, name="Jaco Child", birth_date="2018-07-22", medical_info="Alergia a los frutos secos")
+]
+
+taps = [
+    Tap(id=1, child_id=1, date="2024-12-18", time="19:42:43", status="sleep", total_hours=1.0),
+    Tap(id=2, child_id=2, date="2024-12-18", time="21:42:43", status="awake", total_hours=0.5)
+]
+
 # DAO (Data Access Object) Clases
 class DAOUsers:
     def __init__(self):
-        self.users = []
+        self.users = users  # Inicializar con la lista de usuarios
     
     def get_user_by_id(self, id):
         return next((u for u in self.users if u.id == id), None)
@@ -64,7 +80,7 @@ class DAOUsers:
 
 class DAOChilds:
     def __init__(self):
-        self.children = []
+        self.children = children  # Inicializar con la lista de niños
     
     def get_child_by_id(self, child_id):
         return next((c for c in self.children if c.id == child_id), None)
@@ -84,7 +100,7 @@ class DAOChilds:
 
 class DAOTaps:
     def __init__(self):
-        self.taps = []
+        self.taps = taps  # Inicializar con la lista de taps
     
     def get_tap_history(self, child_id):
         return [tap.to_dict() for tap in self.taps if tap.child_id == child_id]
