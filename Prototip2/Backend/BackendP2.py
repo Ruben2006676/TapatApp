@@ -45,6 +45,7 @@ usuaris = [
     Usuari(id=2, nom_usuari="pare", contrasenya="123", correu="prova2@gmail.com", nom="Pare", cognom="Prova")
 ]
 
+
 nens = [
     Nen(id=1, usuari_id=1, nom="Carol Nen", data_naixement="2015-03-15", informacio_medica="Cap"),
     Nen(id=2, usuari_id=2, nom="Jaco Nen", data_naixement="2018-07-22", informacio_medica="Al·lèrgia als fruits secs")
