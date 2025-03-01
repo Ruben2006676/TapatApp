@@ -56,13 +56,13 @@ La información se mostrará de manera clara y organizada en la interfaz de usua
 
 ## Frontend (Cliente):
 
-## Interfaz de Usuario (View):
+### Interfaz de Usuario (View):
 
 Permite a los usuarios interactuar con el sistema (iniciar sesión, consultar información, etc.).
 
 Muestra la información de usuarios, niños y taps de manera clara y accesible.
 
-## Servicio Web (WebService):
+### Servicio Web (WebService):
 
 Se comunica con el backend para enviar y recibir datos.
 
