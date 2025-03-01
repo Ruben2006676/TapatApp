@@ -56,11 +56,11 @@ class DaoUsuari:
     def __init__(self):
         self.base_url = "http://127.0.0.1:5000"
 
-    def obtenir_usuari_per_credencials(self, usuari_id, contrasenya):
+    def obtenir_usuari_per_correu(self, correu, contrasenya):
         try:
             resposta = requests.post(
                 f"{self.base_url}/iniciar_sessio",
-                json={"id": usuari_id, "contrasenya": contrasenya}
+                json={"correu": correu, "contrasenya": contrasenya}
             )
 
             if resposta.status_code == 200:
@@ -69,7 +69,7 @@ class DaoUsuari:
                     dades_usuari.get("id"),
                     dades_usuari.get("nom_usuari"),
                     dades_usuari.get("correu"),
-                    contrasenya,
+                    dades_usuari.get("contrasenya"),
                     dades_usuari.get("nom"),
                     dades_usuari.get("cognom")
                 )
@@ -85,22 +85,21 @@ class DaoNen:
     def __init__(self):
         self.base_url = "http://127.0.0.1:5000"
 
-    def obtenir_nens_per_usuari(self, usuari_id):
+    def obtenir_nen_per_id(self, nen_id):
         try:
             resposta = requests.get(
-                f"{self.base_url}/nen",
-                params={"usuari_id": usuari_id}
+                f"{self.base_url}/nen/{nen_id}"
             )
 
             if resposta.status_code == 200:
-                nens_dades = resposta.json()
-                return [Nen(
-                    nen.get("id"),
-                    nen.get("usuari_id"),
-                    nen.get("nom"),
-                    nen.get("data_naixement"),
-                    nen.get("informacio_medica")
-                ) for nen in nens_dades]
+                dades_nen = resposta.json()
+                return Nen(
+                    dades_nen.get("id"),
+                    dades_nen.get("usuari_id"),
+                    dades_nen.get("nom"),
+                    dades_nen.get("data_naixement"),
+                    dades_nen.get("informacio_medica")
+                )
             else:
                 return Error(resposta.status_code, resposta.json().get("error", "Error desconegut"))
         except requests.exceptions.ConnectionError:
@@ -113,15 +112,14 @@ class DaoTap:
     def __init__(self):
         self.base_url = "http://127.0.0.1:5000"
 
-    def obtenir_historial_taps_per_usuari(self, usuari_id):
+    def obtenir_historial_taps(self, nen_id):
         try:
             resposta = requests.get(
-                f"{self.base_url}/tap/historial",
-                params={"usuari_id": usuari_id}
+                f"{self.base_url}/tap/historial/{nen_id}"
             )
 
             if resposta.status_code == 200:
-                taps_dades = resposta.json()
+                dades_taps = resposta.json()
                 return [Tap(
                     tap.get("id"),
                     tap.get("nen_id"),
@@ -129,7 +127,7 @@ class DaoTap:
                     tap.get("hora"),
                     tap.get("estat"),
                     tap.get("hores_totals")
-                ) for tap in taps_dades]
+                ) for tap in dades_taps]
             else:
                 return Error(resposta.status_code, resposta.json().get("error", "Error desconegut"))
         except requests.exceptions.ConnectionError:
@@ -140,9 +138,9 @@ class DaoTap:
 # Classe Vista (Consola)
 class Vista:
     def obtenir_credencials_per_consola(self):
-        usuari_id = int(input("Introdueix l'ID d'usuari: ").strip())
-        contrasenya = input("Introdueix la contrasenya: ").strip()
-        return usuari_id, contrasenya
+        correu = input("Introdueix el teu correu: ").strip()
+        contrasenya = input("Introdueix la teva contrasenya: ").strip()
+        return correu, contrasenya
 
     def mostrar_info_usuari(self, usuari):
         if isinstance(usuari, Usuari):
@@ -150,13 +148,11 @@ class Vista:
         else:
             print("\nNo s'ha pogut obtenir la informació de l'usuari.")
 
-    def mostrar_info_nens(self, nens):
-        if isinstance(nens, list):
-            print("\nInformació dels nens:")
-            for nen in nens:
-                print(nen)
+    def mostrar_info_nen(self, nen):
+        if isinstance(nen, Nen):
+            print(f"\nInformació del nen:\n{nen}")
         else:
-            print("\nNo s'ha pogut obtenir la informació dels nens.")
+            print("\nNo s'ha pogut obtenir la informació del nen.")
 
     def mostrar_historial_taps(self, historial_taps):
         if isinstance(historial_taps, list):
@@ -173,6 +169,15 @@ if __name__ == "__main__":
     dao_nen = DaoNen()
     dao_tap = DaoTap()
 
-    usuari_id, contrasenya = vista.obtenir_credencials_per_consola()
-    usuari = dao_usuari.obtenir_usuari_per_credencials(usuari_id, contrasenya)
+    correu, contrasenya = vista.obtenir_credencials_per_consola()
+    usuari = dao_usuari.obtenir_usuari_per_correu(correu, contrasenya)
     vista.mostrar_info_usuari(usuari)
+
+    if isinstance(usuari, Usuari):
+        nen_id = int(input("Introdueix l'ID del nen: ").strip())
+        nen = dao_nen.obtenir_nen_per_id(nen_id)
+        vista.mostrar_info_nen(nen)
+
+        if isinstance(nen, Nen):
+            historial_taps = dao_tap.obtenir_historial_taps(nen_id)
+            vista.mostrar_historial_taps(historial_taps)
