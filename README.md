@@ -239,6 +239,29 @@ Objectiu: Permetre als usuaris afegir un nou nen a la seva llista de nens.
 
 Funcionalitat: Els usuaris podran afegir un nou nen a través d'un formulari on hauran de proporcionar el nom, edat i data de naixement. Aquesta funcionalitat facilitarà l'actualització de la llista de nens associats a cada usuari.
 
+## Diagrames de Classes Prototip 2
+
+[Diagrama Backend P2](./Prototip2/Backend/BackendP2.mermaid)
+
+[Diagrama Frontend P2](./Prototip2/Frontend/FrontendP2.mermaid)
+
+## Implementació Python Backend i Frontend P2
+
+[Backend P2](./Prototip2/Backend/BackendP2.py)
+
+[Frontend P2](./Prototip2/Frontend/FrontendP2.py)
+
+## Descripció prototip
+
+[Descripció Prototip2](./Prototip2/Descripció%20de%20que%20volem%20implementar%20al%20prototip%202.md)
+
+## Diagrames arquitectura-Backend i Frontend
+
+[Diagrama arquitectura Backend P2](./Prototip2/Backend/BackendP2Arquitectura.mermaid)
+
+[Diagrama arquitectura Frontend P2](./Prototip2/Frontend/FrontendP2Arquitectura.mermaid)
+
+
 
 
 
