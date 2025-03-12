@@ -1,0 +1,12 @@
+sequenceDiagram
+    participant Usuario
+    participant App
+    participant Server as Server/Webservice
+    participant BBDD
+
+    Usuario->>App: Ingresa credenciales
+    App->>Server: Envía credenciales
+    Server->>BBDD: Verifica credenciales
+    BBDD-->>Server: Responde con éxito o error
+    Server-->>App: Devuelve respuesta
+    App-->>Usuario: Muestra mensaje de éxito o error

@@ -1,0 +1,19 @@
+sequenceDiagram
+    participant Usuario
+    participant App
+    participant Server as Server/Webservice
+    participant BBDD
+
+    Usuario->>App: Ingresa credenciales
+    App->>Server: Envía credenciales
+    Server->>BBDD: Verifica credenciales
+    BBDD-->>Server: Responde con éxito
+    Server-->>App: Devuelve Token
+    App-->>Usuario: Muestra mensaje de éxito
+
+    Usuario->>App: Reabre la aplicación (Login automático)
+    App->>Server: Envía Token guardado
+    Server->>BBDD: Valida Token
+    BBDD-->>Server: Token válido
+    Server-->>App: Acceso concedido
+    App-->>Usuario: Accede sin volver a ingresar credenciales
