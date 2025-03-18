@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from datetime import date
+import hashlib
 
 app = Flask(__name__)
 
@@ -12,7 +13,7 @@ class Usuari:
         self.correu = correu
         self.nom = nom
         self.cognom = cognom
-    
+
     def a_diccionari(self):
         return self.__dict__
 
@@ -23,7 +24,7 @@ class Nen:
         self.nom = nom
         self.data_naixement = data_naixement
         self.informacio_medica = informacio_medica
-    
+
     def a_diccionari(self):
         return self.__dict__
 
@@ -35,13 +36,13 @@ class Tap:
         self.hora = hora
         self.estat = estat
         self.hores_totals = hores_totals
-    
+
     def a_diccionari(self):
         return self.__dict__
 
 # Llistes de dades
 usuaris = [
-    Usuari(id=1, nom_usuari="mare", contrasenya="12345", correu="prova@gmail.com", nom="Mare", cognom="Prova"),
+    Usuari(id=1, nom_usuari="mare", contrasenya="123", correu="prova@gmail.com", nom="Mare", cognom="Prova"),
     Usuari(id=2, nom_usuari="pare", contrasenya="123", correu="prova2@gmail.com", nom="Pare", cognom="Prova")
 ]
 
@@ -105,20 +106,15 @@ class DAOTaps:
     def __init__(self):
         self.taps = taps  # Inicialitzar amb la llista de taps
     
-    def obtenir_historial_taps(self, nen_id):
-        return [tap.a_diccionari() for tap in self.taps if tap.nen_id == nen_id]
+    def obtenir_tap_per_id(self, tap_id):
+        return next((t for t in self.taps if t.id == tap_id), None)
     
     def crear_tap(self, tap):
         self.taps.append(tap)
         return True
     
-    def actualitzar_tap(self, tap):
-        tap_existent = next((t for t in self.taps if t.id == tap.id), None)
-        if tap_existent:
-            tap_existent.estat = tap.estat
-            tap_existent.hores_totals = tap.hores_totals
-            return True
-        return False
+    def obtenir_historial_taps_per_nen_id(self, nen_id):
+        return [t for t in self.taps if t.nen_id == nen_id]
 
 # Servei Web
 class ServeiWeb:
@@ -126,26 +122,27 @@ class ServeiWeb:
         self.dao_usuaris = DAOUsuaris()
         self.dao_nens = DAONens()
         self.dao_taps = DAOTaps()
-
+    
     def obtenir_usuari_per_correu(self, correu):
         usuari = self.dao_usuaris.obtenir_usuari_per_correu(correu)
         return usuari.a_diccionari() if usuari else None
-
+    
+    def crear_usuari(self, usuari):
+        return self.dao_usuaris.crear_usuari(usuari)
+    
+    def crear_nen(self, nen):
+        return self.dao_nens.crear_nen(nen)
+    
+    def crear_tap(self, tap):
+        return self.dao_taps.crear_tap(tap)
+    
     def obtenir_nen_per_id(self, nen_id):
         nen = self.dao_nens.obtenir_nen_per_id(nen_id)
         return nen.a_diccionari() if nen else None
-
-    def obtenir_historial_taps(self, nen_id):
-        return self.dao_taps.obtenir_historial_taps(nen_id)
-
-    def crear_usuari(self, usuari):
-        return self.dao_usuaris.crear_usuari(usuari)
-
-    def crear_nen(self, nen):
-        return self.dao_nens.crear_nen(nen)
-
-    def crear_tap(self, tap):
-        return self.dao_taps.crear_tap(tap)
+    
+    def obtenir_historial_taps_per_nen_id(self, nen_id):
+        taps = self.dao_taps.obtenir_historial_taps_per_nen_id(nen_id)
+        return [t.a_diccionari() for t in taps]
 
 servei_web = ServeiWeb()
 
@@ -155,52 +152,33 @@ def iniciar_sessio():
     dades = request.json
     usuari = servei_web.obtenir_usuari_per_correu(dades.get('correu'))
     if usuari and usuari['contrasenya'] == dades.get('contrasenya'):
-                return jsonify({"missatge": "Inici de sessió exitós", "usuari": usuari}), 200
+        token = hashlib.sha256(f"{usuari['correu']}{usuari['id']}{date.today()}".encode()).hexdigest()
+        return jsonify({"missatge": "Inici de sessió exitós", "usuari": usuari, "token": token}), 200
     return jsonify({"error": "Credencials invàlides"}), 401
 
 @app.route('/usuari', methods=['POST'])
 def crear_usuari():
     dades = request.json
-    nou_usuari = Usuari(
-        id=len(usuaris) + 1,
-        nom_usuari=dades.get('nom_usuari'),
-        contrasenya=dades.get('contrasenya'),
-        correu=dades.get('correu'),
-        nom=dades.get('nom'),
-        cognom=dades.get('cognom')
-    )
-    if servei_web.crear_usuari(nou_usuari):
-        return jsonify({"missatge": "Usuari creat amb èxit", "usuari": nou_usuari.a_diccionari()}), 201
-    return jsonify({"error": "Error en crear l'usuari"}), 400
+    usuari = Usuari(**dades)
+    if servei_web.crear_usuari(usuari):
+        return jsonify({"missatge": "Usuari creat correctament"}), 201
+    return jsonify({"error": "No s'ha pogut crear l'usuari"}), 400
 
 @app.route('/nen', methods=['POST'])
 def crear_nen():
     dades = request.json
-    nou_nen = Nen(
-        id=len(nens) + 1,
-        usuari_id=dades.get('usuari_id'),
-        nom=dades.get('nom'),
-        data_naixement=dades.get('data_naixement'),
-        informacio_medica=dades.get('informacio_medica')
-    )
-    if servei_web.crear_nen(nou_nen):
-        return jsonify({"missatge": "Nen creat amb èxit", "nen": nou_nen.a_diccionari()}), 201
-    return jsonify({"error": "Error en crear el nen"}), 400
+    nen = Nen(**dades)
+    if servei_web.crear_nen(nen):
+        return jsonify({"missatge": "Nen creat correctament"}), 201
+    return jsonify({"error": "No s'ha pogut crear el nen"}), 400
 
 @app.route('/tap', methods=['POST'])
 def crear_tap():
     dades = request.json
-    nou_tap = Tap(
-        id=len(taps) + 1,
-        nen_id=dades.get('nen_id'),
-        data=dades.get('data'),
-        hora=dades.get('hora'),
-        estat=dades.get('estat'),
-        hores_totals=dades.get('hores_totals')
-    )
-    if servei_web.crear_tap(nou_tap):
-        return jsonify({"missatge": "Tap creat amb èxit", "tap": nou_tap.a_diccionari()}), 201
-    return jsonify({"error": "Error en crear el tap"}), 400
+    tap = Tap(**dades)
+    if servei_web.crear_tap(tap):
+        return jsonify({"missatge": "Tap creat correctament"}), 201
+    return jsonify({"error": "No s'ha pogut crear el tap"}), 400
 
 @app.route('/nen/<int:nen_id>', methods=['GET'])
 def obtenir_nen(nen_id):
@@ -211,8 +189,10 @@ def obtenir_nen(nen_id):
 
 @app.route('/tap/historial/<int:nen_id>', methods=['GET'])
 def obtenir_historial_taps(nen_id):
-    historial = servei_web.obtenir_historial_taps(nen_id)
-    return jsonify(historial), 200
+    taps = servei_web.obtenir_historial_taps_per_nen_id(nen_id)
+    if taps:
+        return jsonify(taps), 200
+    return jsonify({"error": "No s'han trobat taps per aquest nen"}), 404
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000, debug=True)
