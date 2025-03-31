@@ -1,0 +1,39 @@
+@startuml DiagramaCasosUsuTapatApp
+left to right direction
+skinparam packageStyle rectangle
+actor Tutor as tutor
+actor Cuidador as cuidador
+actor Sistema as sistema
+
+rectangle TapatApp {
+  tutor -- (Gestionar Perfil)
+  tutor -- (Gestionar Nens)
+  tutor -- (Registrar Taps)
+  tutor -- (Consultar Estadístiques)
+  
+  cuidador -- (Veure Nens Assignats)
+  cuidador -- (Registrar Taps)
+  cuidador -- (Consultar Informació Mèdica)
+  
+  (Gestionar Nens) .> (Afegir Nen) : include
+  (Gestionar Nens) .> (Modificar Dades Nen) : include
+  
+  (Registrar Taps) as (Registrar Taps)
+  (Consultar Estadístiques) ..> (Generar Informes) : extend
+}
+
+note right of tutor
+  **Tutor (mare)**
+  Usuari amb rol de tutor/a
+  que gestiona els seus nens
+  i registra els seus taps
+end note
+
+note left of cuidador
+  **Cuidador (cuidador1)**
+  Usuari amb rol de cuidador
+  que registra taps i consulta
+  informació dels nens assignats
+end note
+
+@enduml
