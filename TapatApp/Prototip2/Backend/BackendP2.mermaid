@@ -1,0 +1,64 @@
+classDiagram
+    class WebService {
+        +get_user_by_id(id: int) User
+        +get_child_by_id(child_id: int)
+        +get_tap_history(child_id: int)
+        +create_user(user: User)
+        +create_child(child: Child)
+        +create_tap(tap: Tap)
+    }
+
+    class DAOUsers {
+        - users: list
+        + get_user_by_id(id: int) User
+        + create_user(user: User) bool
+        + update_user(user: User) bool
+    }
+
+    class DAOChilds {
+        - children: list
+        + get_child_by_id(child_id: int) Child
+        + create_child(child: Child) bool
+        + update_child(child: Child) bool
+    }
+
+    class DAOTaps {
+        - taps: list
+        + get_tap_history(child_id: int) list<Tap>
+        + create_tap(tap: Tap) bool
+        + update_tap(tap: Tap) bool
+    }
+
+    class Users {
+        - id: int
+        - username: string
+        - password: string
+        - email: string
+        - first_name: string
+        - last_name: string
+    }
+
+    class Child {
+        - id: int
+        - user_id: int
+        - name: string
+        - birth_date: date
+        - medical_info: string
+    }
+
+    class Tap {
+        - id: int
+        - child_id: int
+        - date: date
+        - time: string
+        - status: string
+        - total_hours: float
+    }
+
+    WebService --> DAOUsers : Consulta a
+    WebService --> DAOChilds : Consulta a
+    WebService --> DAOTaps : Consulta a
+
+    DAOUsers --> Users : Gestiona
+    DAOChilds --> Child : Gestiona
+    DAOTaps --> Tap : Gestiona

@@ -1,0 +1,13 @@
+flowchart TD
+    A[View] <--> B[WebService]
+    B <--> C[DAOUsers] 
+    B <--> D[DAOChilds] 
+    B <--> E[DAOTaps] 
+
+    C <--> F[Users] 
+    D <--> G[Childs] 
+    E <--> H[Taps]  
+
+    I[Error]
+
+

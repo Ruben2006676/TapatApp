@@ -1,0 +1,31 @@
+sequenceDiagram
+    participant Jugador1 as Jugador 1
+    participant Jugador2 as Jugador 2
+    participant Servidor as Servidor
+
+    Jugador1->>Servidor: Crear nova partida
+    Servidor->>Jugador1: Confirmació de partida creada
+    Jugador2->>Servidor: Connectar-se a la partida
+    Servidor->>Jugador2: Confirmació de connexió
+    Servidor->>Jugador1: Jugador 2 s'ha connectat
+    Servidor->>Jugador1: Iniciar partida
+    Servidor->>Jugador2: Iniciar partida
+
+    loop Durant el joc
+        Jugador1->>Servidor: Moure nau
+        Servidor->>Jugador2: Actualitzar posició de la nau de Jugador 1
+        Jugador1->>Servidor: Disparar
+        Servidor->>Jugador2: Impacte detectat?
+        alt Si impacte
+            Servidor->>Jugador1: Partida acabada. Guanyador: Jugador 1
+            Servidor->>Jugador2: Partida acabada. Guanyador: Jugador 1
+        else
+            Servidor->>Jugador1: Continuar
+            Servidor->>Jugador2: Continuar
+        end
+    end
+
+    alt Si un jugador es desconnecta
+        Jugador2->>Servidor: Desconnectar
+        Servidor->>Jugador1: Jugador 2 ha abandonat. Partida acabada
+    end
