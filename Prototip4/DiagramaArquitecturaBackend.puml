@@ -1,0 +1,42 @@
+@startuml DiagramaBackendP4_Exacte
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+rectangle "Flask App" as flask {
+  [Endpoints] as endpoints
+  [ServeiWeb] as servei
+  [DAOUsuaris] as dao_usuaris
+  [DAONens] as dao_nens
+  [DAOTaps] as dao_taps
+  
+  endpoints -> servei : Usa
+  servei -> dao_usuaris
+  servei -> dao_nens
+  servei -> dao_taps
+}
+
+database "Dades Memòria" as dades {
+  [Llista Usuaris]
+  [Llista Nens]
+  [Llista Taps]
+}
+
+dao_usuaris --> dades : Accedeix
+dao_nens --> dades 
+dao_taps --> dades
+
+note right of flask
+  **Endpoints principals:**
+  - POST /login (token JWT)
+  - POST /child (llista nens)
+  - POST /taps (llista taps)
+  - Altres: /perfil, /crear_*
+  
+  **Canvis P4:**
+  - Respostes amb {coderesponse, msg}
+  - Taps amb init/end
+  - Nens amb treatment_id
+end note
+
+@enduml

@@ -1,0 +1,111 @@
+@startuml DiagramaClasesBackendP4_Completo
+
+class ServeiWeb {
+  +autenticar(correu: str, contrasenya: str) Usuari
+  +obtenir_info_usuari(id: int) Usuari
+  +obtenir_nens_usuari(id: int, rol: str) list[Nen]
+  +obtenir_taps_usuari(id: int, rol: str) list[Tap]
+  +crear_usuari(usuari: Usuari) bool
+  +actualitzar_usuari(usuari: Usuari) bool
+  +crear_nen(nen: Nen) bool
+  +actualitzar_nen(nen: Nen) bool
+  +crear_tap(tap: Tap) bool
+  +actualitzar_tap(tap: Tap) bool
+  +generar_informe_son(nen_id: int) dict <<Nuevo P4>>
+}
+
+class DAOUsuaris {
+  -usuaris: list
+  +obtenir_usuari_per_id(id: int) Usuari
+  +obtenir_usuari_per_correu(correu: str) Usuari
+  +crear_usuari(usuari: Usuari) bool
+  +actualitzar_usuari(usuari: Usuari) bool
+  +validar_token(token: str) bool <<Nuevo P4>>
+}
+
+class DAONens {
+  -nens: list
+  +obtenir_nen_per_id(id: int) Nen
+  +obtenir_nens_per_rol(usuari_id: int, rol: str) list[Nen]
+  +crear_nen(nen: Nen) bool
+  +actualitzar_nen(nen: Nen) bool
+  +calcular_promig_son(nen_id: int) float <<Nuevo P4>>
+}
+
+class DAOTaps {
+  -taps: list
+  +obtenir_tap_per_id(id: int) Tap
+  +obtenir_taps_per_nen(nen_id: int) list[Tap]
+  +obtenir_taps_per_data(data: str) list[Tap] <<Nuevo P4>>
+  +crear_tap(tap: Tap) bool
+  +actualitzar_tap(tap: Tap) bool
+}
+
+class Usuari {
+  +id: int
+  +nom_usuari: str
+  +contrasenya: str
+  +correu: str
+  +nom: str
+  +cognom: str
+  +rol: str
+  +idrole: int <<Nuevo P4>>
+  +a_diccionari() dict
+}
+
+class Nen {
+  +id: int
+  +tutor_id: int
+  +cuidador_id: int
+  +nom: str
+  +child_name: str <<Nuevo P4>>
+  +data_naixement: str
+  +informacio_medica: str
+  +treatment_id: int <<Nuevo P4>>
+  +sleep_average: float <<Nuevo P4>>
+  +a_diccionari() dict
+}
+
+class Tap {
+  +id: int
+  +nen_id: int
+  +child_id: int <<Nuevo P4>>
+  +data: str
+  +hora: str
+  +estat: str
+  +status_id: int <<Nuevo P4>>
+  +init: datetime <<Nuevo P4>>
+  +end: datetime <<Nuevo P4>>
+  +hores_totals: float
+  +a_diccionari() dict
+}
+
+ServeiWeb --> DAOUsuaris
+ServeiWeb --> DAONens
+ServeiWeb --> DAOTaps
+
+DAOUsuaris --> Usuari
+DAONens --> Nen
+DAOTaps --> Tap
+
+Usuari "1" --> "0..*" Nen : tutor/cuidador
+Nen "1" --> "0..*" Tap
+
+note top of ServeiWeb
+  **Canvis P4:**
+  - Nous mètodes per a informes
+  - Respostes estandarditzades
+  (coderesponse/msg)
+end note
+
+note right of Tap
+  **Canvis P4:**
+  - Nous camps temporals
+  - status_id per estat
+  - Relació amb child_id
+  - Tokens  per a autenticació
+  - Informes de son
+  - treatment_id per a tractament
+end note
+
+@enduml
