@@ -35,10 +35,9 @@ class DBConnection:
         try:
             self.connection = mysql.connector.connect(
                 host=os.getenv('DB_HOST', 'localhost'),
-                database=os.getenv('DB_NAME', 'tapatApp3'),
+                database=os.getenv('DB_NAME', 'TapatApp'),
                 user=os.getenv('DB_USER', 'root'),
-                password=os.getenv('DB_PASSWORD', ''),
-                auth_plugin='mysql_native_password'
+                password=os.getenv('DB_PASSWORD', 'root'),
             )
             if self.connection.is_connected():
                 logging.info("✅ Conexión a MySQL establecida")
