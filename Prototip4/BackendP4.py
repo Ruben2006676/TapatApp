@@ -270,24 +270,21 @@ def login():
     try:
         data = request.get_json()
         
-        # Validar datos de entrada
         if not data or 'username' not in data or 'password' not in data:
             return jsonify({
                 "coderesponse": "0",
-                "msg": "Usuario y contraseña requeridos"
+                "msg": "No validat"
             }), 400
         
-        # Autenticar usuario
         usuario, roles = servicio_web.usuarios.obtener_por_credenciales(
             data['username'], data['password'])
         
         if not usuario:
             return jsonify({
                 "coderesponse": "0",
-                "msg": "Credenciales incorrectas"
+                "msg": "No validat"
             }), 401
         
-        # Generar token JWT
         token_payload = {
             'user_id': usuario.id,
             'username': usuario.username,
@@ -296,22 +293,21 @@ def login():
         }
         token = jwt.encode(token_payload, app.config['SECRET_KEY'], algorithm="HS256")
         
-        # Preparar respuesta
-        response_data = {
+        return jsonify({
             "coderesponse": "1",
-            "msg": "Autenticación exitosa",
+            "msg": "Usuari Ok",
+            "id": usuario.id,
+            "username": usuario.username,
+            "email": usuario.email,
             "token": token,
-            "user": usuario.to_dict(),
-            "roles": roles
-        }
-        
-        return jsonify(response_data), 200
+            "idrole": roles[0] if roles else None
+        }), 200
     
     except Exception as e:
         logging.error(f"Error en endpoint /login: {e}")
         return jsonify({
             "coderesponse": "0",
-            "msg": "Error interno del servidor"
+            "msg": "Error intern del servidor"
         }), 500
 
 @app.route('/child', methods=['POST'])
@@ -333,7 +329,7 @@ def obtener_nens(current_user):
         logging.error(f"Error en endpoint /child: {e}")
         return jsonify({
             "coderesponse": "0",
-            "msg": "Error al obtener niños"
+            "msg": "Error al obtenir nens"
         }), 500
 
 @app.route('/taps', methods=['POST'])
@@ -345,7 +341,7 @@ def obtener_taps(current_user):
         if 'idchild' not in data:
             return jsonify({
                 "coderesponse": "0",
-                "msg": "ID de niño requerido"
+                "msg": "ID de nen requerit"
             }), 400
         
         taps = servicio_web.taps.obtener_por_nen(
@@ -362,7 +358,7 @@ def obtener_taps(current_user):
         logging.error(f"Error en endpoint /taps: {e}")
         return jsonify({
             "coderesponse": "0",
-            "msg": "Error al obtener taps"
+            "msg": "Error al obtenir taps"
         }), 500
 
 # ----------------------------
