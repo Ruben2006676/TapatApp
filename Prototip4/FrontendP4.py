@@ -8,47 +8,33 @@ import urllib3
 import jwt
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# --- MODELOS COMPLETOS ---
+# --- MODELOS ---
 class Usuari:
-    def __init__(self, id, nom_usuari, correu, nom, cognom, rol):
+    def __init__(self, id, nom_usuari, correu, token, idrole):
         self.id = id
         self.nom_usuari = nom_usuari
         self.correu = correu
-        self.nom = nom
-        self.cognom = cognom
-        self.rol = rol
-
-    def __str__(self):
-        return (f"Usuari: {self.nom} {self.cognom} ({self.rol})\n"
-                f"Correu: {self.correu}\nNom d'usuari: {self.nom_usuari}")
+        self.token = token
+        self.idrole = idrole
 
 class Nen:
-    def __init__(self, id, nom, data_naixement, informacio_medica):
+    def __init__(self, id, child_name, sleep_average=None, treatment_id=None, time=None):
         self.id = id
-        self.nom = nom
-        self.data_naixement = data_naixement
-        self.informacio_medica = informacio_medica
-
-    def __str__(self):
-        return (f"Nom: {self.nom}\n"
-                f"Data naixement: {self.data_naixement}\n"
-                f"Informació mèdica: {self.informacio_medica}")
+        self.nom = child_name
+        self.sleep_average = sleep_average
+        self.treatment_id = treatment_id
+        self.time = time
 
 class Tap:
-    def __init__(self, id, nen_id, data, hora, estat, hores_totals):
+    def __init__(self, id, child_id, status_id, user_id, init, end=None):
         self.id = id
-        self.nen_id = nen_id
-        self.data = data
-        self.hora = hora
-        self.estat = estat
-        self.hores_totals = hores_totals
+        self.child_id = child_id
+        self.status_id = status_id
+        self.user_id = user_id
+        self.init = init
+        self.end = end
 
-    def __str__(self):
-        return (f"Data: {self.data} {self.hora}\n"
-                f"Estat: {self.estat}\n"
-                f"Hores totals: {self.hores_totals}")
-
-# --- AUTH MANAGER COMPLETO ---
+# --- AUTH MANAGER ---
 class AuthManager:
     def __init__(self):
         self.token_file = 'auth_session.json'
@@ -67,10 +53,8 @@ class AuthManager:
                         decoded = jwt.decode(self.token, options={"verify_signature": False})
                         self.usuari = {
                             'id': decoded['user_id'],
-                            'nom': decoded.get('nom', ''),
-                            'cognom': decoded.get('cognom', ''),
-                            'correu': decoded.get('correu', ''),
-                            'nom_usuari': decoded.get('nom_usuari', '')
+                            'nom_usuari': decoded['username'],
+                            'rol': decoded['rol']
                         }
                         self.rol = decoded['rol']
             except Exception as e:
@@ -105,9 +89,8 @@ class AuthManager:
             return False
         
         try:
-            decoded = jwt.decode(self.token, options={"verify_signature": False})
-            resposta = requests.get(
-                "http://127.0.0.1:5000/perfil",
+            resposta = requests.post(
+                "http://127.0.0.1:5000/login",
                 headers={'Authorization': f'Bearer {self.token}'},
                 timeout=3,
                 verify=False
@@ -117,17 +100,17 @@ class AuthManager:
             print(f"Error validando sesión: {str(e)}")
             return False
 
-# --- DAOs COMPLETOS ---
+# --- DAOs ---
 class DaoUsuari:
     def __init__(self, auth_manager):
         self.base_url = "http://127.0.0.1:5000"
         self.auth_manager = auth_manager
     
-    def iniciar_sessio(self, correu, contrasenya):
+    def iniciar_sessio(self, username, password):
         try:
             resposta = requests.post(
-                f"{self.base_url}/login",  # Cambiar a /login
-                json={"username": correu, "password": contrasenya},  # Ajustar parámetros
+                f"{self.base_url}/login",
+                json={"username": username, "password": password},
                 headers={'Content-Type': 'application/json'},
                 timeout=10,
                 verify=False
@@ -138,15 +121,19 @@ class DaoUsuari:
                 if dades.get("coderesponse") == "1":
                     self.auth_manager.guardar_sessio(
                         dades['token'],
-                        dades['username'],
+                        {
+                            'id': dades['id'],
+                            'nom_usuari': dades['username'],
+                            'correu': dades['email'],
+                            'rol': dades['idrole']
+                        },
                         dades['idrole']
                     )
                     return Usuari(
                         dades['id'],
                         dades['username'],
                         dades['email'],
-                        "",  # Nombre no proporcionado
-                        "",  # Apellido no proporcionado
+                        dades['token'],
                         dades['idrole']
                     )
                 else:
@@ -164,8 +151,8 @@ class DaoNen:
     def obtenir_nens(self):
         try:
             resposta = requests.post(
-                f"{self.base_url}/child",  # Cambiar a /child
-                json={"iduser": self.auth_manager.usuari['id']},  # Enviar iduser
+                f"{self.base_url}/child",
+                json={"iduser": self.auth_manager.usuari['id']},
                 headers={'Authorization': f'Bearer {self.auth_manager.token}'},
                 timeout=5,
                 verify=False
@@ -176,8 +163,9 @@ class DaoNen:
                     return [Nen(
                         n['id'],
                         n['child_name'],
-                        "",  # Data de nacimiento no proporcionada
-                        ""   # Información médica no proporcionada
+                        n.get('sleep_average'),
+                        n.get('treatment_id'),
+                        n.get('time')
                     ) for n in dades.get("data", [])]
                 else:
                     return f"Error: {dades.get('msg', 'Error desconocido')}"
@@ -193,8 +181,8 @@ class DaoTap:
     def obtenir_taps(self, idchild, data=None):
         try:
             resposta = requests.post(
-                f"{self.base_url}/taps",  # Cambiar a /taps
-                json={"idchild": idchild, "data": data},  # Ajustar parámetros
+                f"{self.base_url}/taps",
+                json={"idchild": idchild, "data": data},
                 headers={'Authorization': f'Bearer {self.auth_manager.token}'},
                 timeout=5,
                 verify=False
@@ -205,10 +193,10 @@ class DaoTap:
                     return [Tap(
                         t['id'],
                         t['child_id'],
-                        t['init'].split("T")[0],
-                        t['init'].split("T")[1],
                         t['status_id'],
-                        t.get('end', None)
+                        t['user_id'],
+                        t['init'],
+                        t.get('end')
                     ) for t in dades.get("data", [])]
                 else:
                     return f"Error: {dades.get('msg', 'Error desconocido')}"
@@ -216,7 +204,7 @@ class DaoTap:
         except requests.exceptions.RequestException as e:
             return f"Error de connexió: {str(e)}"
 
-# --- INTERFAZ TKINTER COMPLETA ---
+# --- INTERFAZ TKINTER ---
 class Aplicacio:
     def __init__(self, root):
         self.root = root
@@ -237,7 +225,6 @@ class Aplicacio:
         self._crear_interfaz()
         
         if self.auth_manager.sessio_valida():
-            self._actualizar_datos_usuario_desde_token()
             self._mostrar_menu_principal()
         else:
             self._mostrar_login()
@@ -246,13 +233,12 @@ class Aplicacio:
         self.main_frame = ttk.Frame(self.root)
         self.main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
+        # Pantallas
         self._crear_pantalla_login()
         self._crear_pantalla_menu()
         self._crear_pantalla_perfil()
         self._crear_pantalla_nens()
         self._crear_pantalla_taps()
-        self._crear_pantalla_crear_usuari()
-        self._crear_pantalla_crear_nen()
         self._crear_pantalla_crear_tap()
 
     def _crear_pantalla_login(self):
@@ -263,13 +249,13 @@ class Aplicacio:
         frame_form = ttk.Frame(self.frame_login)
         frame_form.pack(pady=20)
         
-        ttk.Label(frame_form, text="Correu electrònic:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entry_correu = ttk.Entry(frame_form, width=30)
-        self.entry_correu.grid(row=0, column=1, padx=5, pady=5)
+        ttk.Label(frame_form, text="Nom d'usuari:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entry_username = ttk.Entry(frame_form, width=30)
+        self.entry_username.grid(row=0, column=1, padx=5, pady=5)
         
         ttk.Label(frame_form, text="Contrasenya:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entry_contrasenya = ttk.Entry(frame_form, width=30, show="*")
-        self.entry_contrasenya.grid(row=1, column=1, padx=5, pady=5)
+        self.entry_password = ttk.Entry(frame_form, width=30, show="*")
+        self.entry_password.grid(row=1, column=1, padx=5, pady=5)
         
         btn_frame = ttk.Frame(self.frame_login)
         btn_frame.pack(pady=20)
@@ -289,8 +275,6 @@ class Aplicacio:
         ttk.Button(btn_frame, text="El Meu Perfil", command=self._mostrar_perfil, width=20).pack(pady=10)
         ttk.Button(btn_frame, text="Els Meus Nens", command=self._mostrar_nens, width=20).pack(pady=10)
         ttk.Button(btn_frame, text="Taps dels Nens", command=self._mostrar_taps, width=20).pack(pady=10)
-        ttk.Button(btn_frame, text="Afegir Usuari", command=lambda: self._mostrar_crear('usuari'), width=20).pack(pady=10)
-        ttk.Button(btn_frame, text="Afegir Nen", command=lambda: self._mostrar_crear('nen'), width=20).pack(pady=10)
         ttk.Button(btn_frame, text="Registrar Tap", command=lambda: self._mostrar_crear('tap'), width=20).pack(pady=10)
         
         ttk.Button(self.frame_menu, text="Tancar Sessió", command=self._tancar_sessio).pack(pady=30)
@@ -310,16 +294,20 @@ class Aplicacio:
         
         ttk.Label(self.frame_nens, text="Els Meus Nens", style='Header.TLabel').pack(pady=10)
         
-        columns = ('nom', 'data_naixement', 'informacio_medica')
+        columns = ('id', 'nom', 'sleep_average', 'treatment_id', 'time')
         self.tree_nens = ttk.Treeview(self.frame_nens, columns=columns, show='headings', height=15)
         
+        self.tree_nens.heading('id', text='ID')
         self.tree_nens.heading('nom', text='Nom')
-        self.tree_nens.heading('data_naixement', text='Data Naixement')
-        self.tree_nens.heading('informacio_medica', text='Informació Mèdica')
+        self.tree_nens.heading('sleep_average', text='Mitjana Son')
+        self.tree_nens.heading('treatment_id', text='ID Tractament')
+        self.tree_nens.heading('time', text='Temps')
         
-        self.tree_nens.column('nom', width=200)
-        self.tree_nens.column('data_naixement', width=150)
-        self.tree_nens.column('informacio_medica', width=400)
+        self.tree_nens.column('id', width=50)
+        self.tree_nens.column('nom', width=150)
+        self.tree_nens.column('sleep_average', width=100)
+        self.tree_nens.column('treatment_id', width=100)
+        self.tree_nens.column('time', width=100)
         
         scrollbar = ttk.Scrollbar(self.frame_nens, orient=tk.VERTICAL, command=self.tree_nens.yview)
         self.tree_nens.configure(yscroll=scrollbar.set)
@@ -334,18 +322,22 @@ class Aplicacio:
         
         ttk.Label(self.frame_taps, text="Taps dels Nens", style='Header.TLabel').pack(pady=10)
         
-        columns = ('data', 'hora', 'estat', 'hores_totals')
+        columns = ('id', 'child_id', 'status_id', 'user_id', 'init', 'end')
         self.tree_taps = ttk.Treeview(self.frame_taps, columns=columns, show='headings', height=15)
         
-        self.tree_taps.heading('data', text='Data')
-        self.tree_taps.heading('hora', text='Hora')
-        self.tree_taps.heading('estat', text='Estat')
-        self.tree_taps.heading('hores_totals', text='Hores Totals')
+        self.tree_taps.heading('id', text='ID')
+        self.tree_taps.heading('child_id', text='ID Nen')
+        self.tree_taps.heading('status_id', text='Estat')
+        self.tree_taps.heading('user_id', text='ID Usuari')
+        self.tree_taps.heading('init', text='Inici')
+        self.tree_taps.heading('end', text='Fi')
         
-        self.tree_taps.column('data', width=120)
-        self.tree_taps.column('hora', width=80)
-        self.tree_taps.column('estat', width=100)
-        self.tree_taps.column('hores_totals', width=100)
+        self.tree_taps.column('id', width=50)
+        self.tree_taps.column('child_id', width=70)
+        self.tree_taps.column('status_id', width=70)
+        self.tree_taps.column('user_id', width=70)
+        self.tree_taps.column('init', width=150)
+        self.tree_taps.column('end', width=150)
         
         scrollbar = ttk.Scrollbar(self.frame_taps, orient=tk.VERTICAL, command=self.tree_taps.yview)
         self.tree_taps.configure(yscroll=scrollbar.set)
@@ -354,63 +346,6 @@ class Aplicacio:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         ttk.Button(self.frame_taps, text="Tornar al Menú", command=self._mostrar_menu_principal).pack(pady=10)
-
-    def _crear_pantalla_crear_usuari(self):
-        self.frame_crear_usuari = ttk.Frame(self.main_frame)
-        
-        ttk.Label(self.frame_crear_usuari, text="Crear Nou Usuari", style='Header.TLabel').pack(pady=10)
-        
-        frame_form = ttk.Frame(self.frame_crear_usuari)
-        frame_form.pack(pady=10)
-        
-        campos = [
-            ("Nom d'usuari:", "entry_nom_usuari"),
-            ("Contrasenya:", "entry_contrasenya_usuari", True),
-            ("Correu:", "entry_correu_usuari"),
-            ("Nom:", "entry_nom_usuari"),
-            ("Cognom:", "entry_cognom_usuari"),
-            ("Rol (tutor/cuidador):", "entry_rol_usuari")
-        ]
-        
-        for i, (texto, attr, *opciones) in enumerate(campos):
-            ttk.Label(frame_form, text=texto).grid(row=i, column=0, padx=5, pady=5, sticky=tk.W)
-            entry = ttk.Entry(frame_form, width=30, show="*" if opciones and opciones[0] else None)
-            entry.grid(row=i, column=1, padx=5, pady=5)
-            setattr(self, attr, entry)
-        
-        btn_frame = ttk.Frame(self.frame_crear_usuari)
-        btn_frame.pack(pady=10)
-        
-        ttk.Button(btn_frame, text="Crear Usuari", command=self._crear_usuari).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel·lar", command=self._mostrar_menu_principal).pack(side=tk.LEFT, padx=5)
-
-    def _crear_pantalla_crear_nen(self):
-        self.frame_crear_nen = ttk.Frame(self.main_frame)
-        
-        ttk.Label(self.frame_crear_nen, text="Afegir Nou Nen", style='Header.TLabel').pack(pady=10)
-        
-        frame_form = ttk.Frame(self.frame_crear_nen)
-        frame_form.pack(pady=10)
-        
-        campos = [
-            ("Nom:", "entry_nom_nen"),
-            ("Data Naixement (YYYY-MM-DD):", "entry_data_naixement"),
-            ("Informació Mèdica:", "entry_info_medica"),
-            ("ID Tutor:", "entry_tutor_id"),
-            ("ID Cuidador:", "entry_cuidador_id")
-        ]
-        
-        for i, (texto, attr) in enumerate(campos):
-            ttk.Label(frame_form, text=texto).grid(row=i, column=0, padx=5, pady=5, sticky=tk.W)
-            entry = ttk.Entry(frame_form, width=30)
-            entry.grid(row=i, column=1, padx=5, pady=5)
-            setattr(self, attr, entry)
-        
-        btn_frame = ttk.Frame(self.frame_crear_nen)
-        btn_frame.pack(pady=10)
-        
-        ttk.Button(btn_frame, text="Afegir Nen", command=self._crear_nen).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel·lar", command=self._mostrar_menu_principal).pack(side=tk.LEFT, padx=5)
 
     def _crear_pantalla_crear_tap(self):
         self.frame_crear_tap = ttk.Frame(self.main_frame)
@@ -422,10 +357,10 @@ class Aplicacio:
         
         campos = [
             ("ID Nen:", "entry_nen_id"),
-            ("Data (YYYY-MM-DD):", "entry_data_tap"),
-            ("Hora (HH:MM:SS):", "entry_hora_tap"),
-            ("Estat:", "entry_estat_tap"),
-            ("Hores Totals:", "entry_hores_totals")
+            ("Estat (1-4):", "entry_status_id"),
+            ("Data (YYYY-MM-DD):", "entry_data"),
+            ("Hora Inici (HH:MM:SS):", "entry_hora_inici"),
+            ("Hora Fi (HH:MM:SS):", "entry_hora_fi")
         ]
         
         for i, (texto, attr) in enumerate(campos):
@@ -437,44 +372,27 @@ class Aplicacio:
         btn_frame = ttk.Frame(self.frame_crear_tap)
         btn_frame.pack(pady=10)
         
-        ttk.Button(btn_frame, text="Registrar Tap", command=self._crear_tap).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Registrar", command=self._crear_tap).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Cancel·lar", command=self._mostrar_menu_principal).pack(side=tk.LEFT, padx=5)
 
-    def _actualizar_datos_usuario_desde_token(self):
-        try:
-            decoded = jwt.decode(
-                self.auth_manager.token,
-                options={"verify_signature": False}
-            )
-            if 'user_id' in decoded:
-                if not self.auth_manager.usuari.get('nom'):
-                    self.auth_manager.usuari.update({
-                        'nom': decoded.get('nom', ''),
-                        'cognom': decoded.get('cognom', ''),
-                        'correu': decoded.get('correu', ''),
-                        'nom_usuari': decoded.get('nom_usuari', '')
-                    })
-        except Exception as e:
-            print(f"Error actualizando datos: {str(e)}")
-
+    # Métodos de navegación
     def _mostrar_login(self):
         self._amagar_todas_pantallas()
         self.frame_login.pack(fill=tk.BOTH, expand=True)
-        self.entry_correu.focus()
+        self.entry_username.focus()
 
     def _mostrar_menu_principal(self):
         self._amagar_todas_pantallas()
         self.lbl_titol_menu.config(
-            text=f"Benvingut/da {self.auth_manager.usuari['nom']} ({self.auth_manager.rol})"
+            text=f"Benvingut/da {self.auth_manager.usuari['nom_usuari']} ({self.auth_manager.rol})"
         )
         self.frame_menu.pack(fill=tk.BOTH, expand=True)
 
     def _mostrar_perfil(self):
         self._amagar_todas_pantallas()
-        usuari = f"Nom: {self.auth_manager.usuari['nom']} {self.auth_manager.usuari['cognom']}\n"
+        usuari = f"Nom d'usuari: {self.auth_manager.usuari['nom_usuari']}\n"
         usuari += f"Rol: {self.auth_manager.rol}\n"
-        usuari += f"Correu: {self.auth_manager.usuari['correu']}\n"
-        usuari += f"Nom d'usuari: {self.auth_manager.usuari['nom_usuari']}"
+        usuari += f"ID: {self.auth_manager.usuari['id']}"
         
         self.lbl_info_usuari.config(text=usuari)
         self.frame_perfil.pack(fill=tk.BOTH, expand=True)
@@ -490,9 +408,11 @@ class Aplicacio:
         if isinstance(resultat, list):
             for nen in resultat:
                 self.tree_nens.insert('', tk.END, values=(
+                    nen.id,
                     nen.nom,
-                    nen.data_naixement,
-                    nen.informacio_medica
+                    nen.sleep_average,
+                    nen.treatment_id,
+                    nen.time
                 ))
         else:
             messagebox.showerror("Error", resultat)
@@ -505,28 +425,31 @@ class Aplicacio:
         for item in self.tree_taps.get_children():
             self.tree_taps.delete(item)
         
-        resultat = self.dao_tap.obtenir_taps()
-        
-        if isinstance(resultat, list):
-            for tap in resultat:
-                self.tree_taps.insert('', tk.END, values=(
-                    tap.data,
-                    tap.hora,
-                    tap.estat,
-                    tap.hores_totals
-                ))
+        # Obtener el primer niño del usuario para mostrar sus taps
+        nens = self.dao_nen.obtenir_nens()
+        if isinstance(nens, list) and len(nens) > 0:
+            resultat = self.dao_tap.obtenir_taps(nens[0].id)
+            
+            if isinstance(resultat, list):
+                for tap in resultat:
+                    self.tree_taps.insert('', tk.END, values=(
+                        tap.id,
+                        tap.child_id,
+                        tap.status_id,
+                        tap.user_id,
+                        tap.init,
+                        tap.end
+                    ))
+            else:
+                messagebox.showerror("Error", resultat)
         else:
-            messagebox.showerror("Error", resultat)
+            messagebox.showinfo("Informació", "No tens nens registrats")
         
         self.frame_taps.pack(fill=tk.BOTH, expand=True)
 
     def _mostrar_crear(self, tipo):
         self._amagar_todas_pantallas()
-        if tipo == 'usuari':
-            self.frame_crear_usuari.pack(fill=tk.BOTH, expand=True)
-        elif tipo == 'nen':
-            self.frame_crear_nen.pack(fill=tk.BOTH, expand=True)
-        elif tipo == 'tap':
+        if tipo == 'tap':
             self.frame_crear_tap.pack(fill=tk.BOTH, expand=True)
 
     def _amagar_todas_pantallas(self):
@@ -536,106 +459,53 @@ class Aplicacio:
             self.frame_perfil, 
             self.frame_nens, 
             self.frame_taps,
-            self.frame_crear_usuari,
-            self.frame_crear_nen,
             self.frame_crear_tap
         ):
             frame.pack_forget()
 
+    # Métodos de lógica
     def _iniciar_sessio(self):
-        correu = self.entry_correu.get()
-        contrasenya = self.entry_contrasenya.get()
+        username = self.entry_username.get()
+        password = self.entry_password.get()
         
-        if not correu or not contrasenya:
-            messagebox.showerror("Error", "Si us plau, introdueix correu i contrasenya")
+        if not username or not password:
+            messagebox.showerror("Error", "Si us plau, introdueix usuari i contrasenya")
             return
         
-        resultat = self.dao_usuari.iniciar_sessio(correu, contrasenya)
+        resultat = self.dao_usuari.iniciar_sessio(username, password)
         
         if isinstance(resultat, Usuari):
-            self.auth_manager.usuari = {
-                'id': resultat.id,
-                'nom': resultat.nom,
-                'cognom': resultat.cognom,
-                'correu': resultat.correu,
-                'nom_usuari': resultat.nom_usuari
-            }
             self._mostrar_menu_principal()
         else:
             messagebox.showerror("Error", resultat)
 
     def _tancar_sessio(self):
         self.auth_manager.tancar_sessio()
-        self.entry_correu.delete(0, tk.END)
-        self.entry_contrasenya.delete(0, tk.END)
+        self.entry_username.delete(0, tk.END)
+        self.entry_password.delete(0, tk.END)
         self._mostrar_login()
-
-    def _crear_usuari(self):
-        try:
-            nou_usuari = {
-                "nom_usuari": self.entry_nom_usuari.get(),
-                "contrasenya": self.entry_contrasenya_usuari.get(),
-                "correu": self.entry_correu_usuari.get(),
-                "nom": self.entry_nom_usuari.get(),
-                "cognom": self.entry_cognom_usuari.get(),
-                "rol": self.entry_rol_usuari.get()
-            }
-            
-            resposta = requests.post(
-                "http://127.0.0.1:5000/crear_usuari",
-                json=nou_usuari,
-                headers={'Content-Type': 'application/json'},
-                verify=False
-            )
-            
-            if resposta.status_code == 201:
-                messagebox.showinfo("Èxit", "Usuari creat correctament")
-                self._mostrar_menu_principal()
-            else:
-                messagebox.showerror("Error", resposta.json().get('error', 'Error desconegut'))
-        except Exception as e:
-            messagebox.showerror("Error", f"No s'ha pogut crear l'usuari: {str(e)}")
-
-    def _crear_nen(self):
-        try:
-            nou_nen = {
-                "tutor_id": int(self.entry_tutor_id.get()),
-                "cuidador_id": int(self.entry_cuidador_id.get()),
-                "nom": self.entry_nom_nen.get(),
-                "data_naixement": self.entry_data_naixement.get(),
-                "informacio_medica": self.entry_info_medica.get()
-            }
-            
-            resposta = requests.post(
-                "http://127.0.0.1:5000/crear_nen",
-                json=nou_nen,
-                headers={
-                    'Content-Type': 'application/json',
-                    'Authorization': f'Bearer {self.auth_manager.token}'
-                },
-                verify=False
-            )
-            
-            if resposta.status_code == 201:
-                messagebox.showinfo("Èxit", "Nen afegit correctament")
-                self._mostrar_menu_principal()
-            else:
-                messagebox.showerror("Error", resposta.json().get('error', 'Error desconegut'))
-        except Exception as e:
-            messagebox.showerror("Error", f"No s'ha pogut afegir el nen: {str(e)}")
 
     def _crear_tap(self):
         try:
+            # Obtener la fecha y hora del formulario
+            data = self.entry_data.get()
+            hora_inici = self.entry_hora_inici.get()
+            hora_fi = self.entry_hora_fi.get()
+            
+            # Crear objetos datetime para init y end
+            init = f"{data}T{hora_inici}"
+            end = f"{data}T{hora_fi}" if hora_fi else None
+            
             nou_tap = {
-                "nen_id": int(self.entry_nen_id.get()),
-                "data": self.entry_data_tap.get(),
-                "hora": self.entry_hora_tap.get(),
-                "estat": self.entry_estat_tap.get(),
-                "hores_totals": float(self.entry_hores_totals.get())
+                "child_id": int(self.entry_nen_id.get()),
+                "status_id": int(self.entry_status_id.get()),
+                "user_id": self.auth_manager.usuari['id'],
+                "init": init,
+                "end": end
             }
             
             resposta = requests.post(
-                "http://127.0.0.1:5000/crear_tap",
+                "http://127.0.0.1:5000/taps",
                 json=nou_tap,
                 headers={
                     'Content-Type': 'application/json',
@@ -644,11 +514,11 @@ class Aplicacio:
                 verify=False
             )
             
-            if resposta.status_code == 201:
+            if resposta.status_code == 200:
                 messagebox.showinfo("Èxit", "Tap registrat correctament")
                 self._mostrar_menu_principal()
             else:
-                messagebox.showerror("Error", resposta.json().get('error', 'Error desconegut'))
+                messagebox.showerror("Error", resposta.json().get('msg', 'Error desconegut'))
         except Exception as e:
             messagebox.showerror("Error", f"No s'ha pogut registrar el tap: {str(e)}")
 
