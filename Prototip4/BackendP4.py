@@ -19,7 +19,7 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'clau_secreta_per_defecte')
 logging.basicConfig(level=logging.INFO)
 
 # ----------------------------
-# CONEXIÓN A LA BASE DE DATOS
+# CONEXIÓN A LA BASE DE DATOS (VERSIÓN CORREGIDA)
 # ----------------------------
 class DBConnection:
     _instance = None
@@ -28,25 +28,27 @@ class DBConnection:
         if cls._instance is None:
             cls._instance = super(DBConnection, cls).__new__(cls)
             cls._instance.connection = None
-            cls._instance.connect()
+            cls._instance._connect()  # Cambiado a _connect
         return cls._instance
     
-    def connect(self):
+    def _connect(self):  # Renombrado a _connect
         try:
             self.connection = mysql.connector.connect(
                 host=os.getenv('DB_HOST', 'localhost'),
-                database=os.getenv('DB_NAME', 'TapatApp'),
+                database=os.getenv('DB_NAME', 'tapatapp3'),
                 user=os.getenv('DB_USER', 'root'),
                 password=os.getenv('DB_PASSWORD', 'root'),
+                auth_plugin='mysql_native_password'
             )
             if self.connection.is_connected():
                 logging.info("✅ Conexión a MySQL establecida")
         except Error as e:
             logging.error(f"❌ Error al conectar a MySQL: {e}")
+            raise
     
     def get_connection(self):
-        if not self.connection.is_connected():
-            self.connect()
+        if not self.connection or not self.connection.is_connected():
+            self._connect()  # Cambiado a _connect
         return self.connection
     
     def close(self):
@@ -55,7 +57,7 @@ class DBConnection:
             logging.info("🔌 Conexión MySQL cerrada")
 
 # ----------------------------
-# MODELOS DE DATOS
+# MODELOS DE DATOS (AJUSTADOS A LA NUEVA BBDD)
 # ----------------------------
 class Usuario:
     def __init__(self, id, username, password, email):
@@ -108,7 +110,7 @@ class Tap:
         }
 
 # ----------------------------
-# ACCESO A DATOS (DAOs)
+# ACCESO A DATOS (DAOs) - AJUSTADOS
 # ----------------------------
 class DAOUsuarios:
     def __init__(self):
@@ -125,21 +127,13 @@ class DAOUsuarios:
                 JOIN RelationUserChild ruc ON u.id = ruc.user_id
                 JOIN Rol r ON ruc.rol_id = r.id
                 WHERE u.username = %s AND u.password = %s
+                LIMIT 1
             """
             cursor.execute(query, (username, password))
             result = cursor.fetchone()
             
             if result:
-                # Obtener todos los roles del usuario
-                cursor.execute("""
-                    SELECT r.type_rol 
-                    FROM RelationUserChild ruc
-                    JOIN Rol r ON ruc.rol_id = r.id
-                    WHERE ruc.user_id = %s
-                """, (result['id'],))
-                roles = [row['type_rol'] for row in cursor.fetchall()]
-                
-                return Usuario(**result), roles
+                return Usuario(result['id'], result['username'], result['password'], result['email']), result['rol']
             return None, None
         except Error as e:
             logging.error(f"Error en DAOUsuarios.obtener_por_credenciales: {e}")
@@ -158,13 +152,15 @@ class DAONens:
             cursor = conn.cursor(dictionary=True)
             
             query = """
-                SELECT c.* FROM Child c
+                SELECT DISTINCT c.* 
+                FROM Child c
                 JOIN RelationUserChild ruc ON c.id = ruc.child_id
                 WHERE ruc.user_id = %s
             """
             cursor.execute(query, (user_id,))
             
-            return [Nen(**row) for row in cursor.fetchall()]
+            nens = [Nen(**row) for row in cursor.fetchall()]
+            return nens
         except Error as e:
             logging.error(f"Error en DAONens.obtener_por_usuario: {e}")
             return []
@@ -198,9 +194,7 @@ class DAOTaps:
             
             taps = []
             for row in cursor.fetchall():
-                row['init'] = row['init'].replace(tzinfo=None)  # Elimina timezone si existe
-                if row.get('end'):
-                    row['end'] = row['end'].replace(tzinfo=None)
+                row['init'] = row['init'].replace(tzinfo=None)
                 taps.append(Tap(**row))
             
             return taps
@@ -270,21 +264,24 @@ def login():
     try:
         data = request.get_json()
         
+        # Validar datos de entrada
         if not data or 'username' not in data or 'password' not in data:
             return jsonify({
                 "coderesponse": "0",
-                "msg": "No validat"
+                "msg": "Usuario y contraseña requeridos"
             }), 400
         
+        # Autenticar usuario
         usuario, roles = servicio_web.usuarios.obtener_por_credenciales(
             data['username'], data['password'])
         
         if not usuario:
             return jsonify({
                 "coderesponse": "0",
-                "msg": "No validat"
+                "msg": "Credenciales incorrectas"
             }), 401
         
+        # Generar token JWT
         token_payload = {
             'user_id': usuario.id,
             'username': usuario.username,
@@ -293,21 +290,22 @@ def login():
         }
         token = jwt.encode(token_payload, app.config['SECRET_KEY'], algorithm="HS256")
         
-        return jsonify({
+        # Preparar respuesta
+        response_data = {
             "coderesponse": "1",
-            "msg": "Usuari Ok",
-            "id": usuario.id,
-            "username": usuario.username,
-            "email": usuario.email,
+            "msg": "Autenticación exitosa",
             "token": token,
-            "idrole": roles[0] if roles else None
-        }), 200
+            "user": usuario.to_dict(),
+            "roles": roles
+        }
+        
+        return jsonify(response_data), 200
     
     except Exception as e:
         logging.error(f"Error en endpoint /login: {e}")
         return jsonify({
             "coderesponse": "0",
-            "msg": "Error intern del servidor"
+            "msg": "Error interno del servidor"
         }), 500
 
 @app.route('/child', methods=['POST'])
@@ -329,7 +327,7 @@ def obtener_nens(current_user):
         logging.error(f"Error en endpoint /child: {e}")
         return jsonify({
             "coderesponse": "0",
-            "msg": "Error al obtenir nens"
+            "msg": "Error al obtener niños"
         }), 500
 
 @app.route('/taps', methods=['POST'])
@@ -341,7 +339,7 @@ def obtener_taps(current_user):
         if 'idchild' not in data:
             return jsonify({
                 "coderesponse": "0",
-                "msg": "ID de nen requerit"
+                "msg": "ID de niño requerido"
             }), 400
         
         taps = servicio_web.taps.obtener_por_nen(
@@ -358,7 +356,7 @@ def obtener_taps(current_user):
         logging.error(f"Error en endpoint /taps: {e}")
         return jsonify({
             "coderesponse": "0",
-            "msg": "Error al obtenir taps"
+            "msg": "Error al obtener taps"
         }), 500
 
 # ----------------------------
@@ -368,14 +366,17 @@ if __name__ == '__main__':
     try:
         # Verificar conexión a la base de datos al iniciar
         db = DBConnection()
-        if db.get_connection().is_connected():
+        conn = db.get_connection()
+        if conn and conn.is_connected():
             logging.info("🚀 Iniciando servidor Flask...")
             app.run(host='0.0.0.0', port=5000, debug=True)
         else:
             logging.error("No se pudo conectar a la base de datos")
+            exit(1)
     except KeyboardInterrupt:
         logging.info("🛑 Deteniendo servidor...")
-        db.close()
+        if db.connection and db.connection.is_connected():
+            db.close()
     except Exception as e:
         logging.error(f"Error crítico: {e}")
-        db.close()
+        exit(1)
