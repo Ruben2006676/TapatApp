@@ -1,23 +1,46 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, scrolledtext
+from PIL import Image, ImageTk
 import json
 import requests
 from datetime import datetime
+import random
 
 # Configuración de estilos
 def configure_styles():
     style = ttk.Style()
-    style.configure('TFrame', background='#2E2E2E')
-    style.configure('TLabel', background='#2E2E2E', foreground='white', font=('Arial', 10))
-    style.configure('TButton', font=('Arial', 10), padding=5, background='#4A4A4A')
-    style.configure('TEntry', font=('Arial', 10), fieldbackground='#4A4A4A')
-    style.configure('Header.TLabel', font=('Arial', 12, 'bold'), foreground='#FFD700')
-    style.configure('Title.TLabel', font=('Arial', 16, 'bold'), foreground='#FFD700')
-    style.configure('TNotebook', background='#2E2E2E')
-    style.configure('TNotebook.Tab', padding=[10, 5], background='#4A4A4A', foreground='white')
+    style.theme_use('clam')
+    
+    # Colores
+    bg_color = '#2E2E2E'
+    fg_color = 'white'
+    accent_color = '#FFD700'
+    secondary_color = '#4A4A4A'
+    highlight_color = '#6B6B6B'
+    
+    # Configuración general
+    style.configure('.', background=bg_color, foreground=fg_color)
+    style.configure('TFrame', background=bg_color)
+    style.configure('TLabel', background=bg_color, foreground=fg_color, font=('Arial', 10))
+    style.configure('TButton', font=('Arial', 10), padding=5, background=secondary_color)
+    style.configure('TEntry', font=('Arial', 10), fieldbackground=secondary_color)
+    style.configure('TCombobox', fieldbackground=secondary_color)
+    style.configure('Treeview', background=bg_color, fieldbackground=bg_color, foreground=fg_color)
+    style.map('Treeview', background=[('selected', highlight_color)])
+    style.configure('Treeview.Heading', background=secondary_color, foreground=fg_color)
+    style.configure('TNotebook', background=bg_color)
+    style.configure('TNotebook.Tab', padding=[10, 5], background=secondary_color, foreground=fg_color)
+    
+    # Estilos personalizados
+    style.configure('Header.TLabel', font=('Arial', 12, 'bold'), foreground=accent_color)
+    style.configure('Title.TLabel', font=('Arial', 16, 'bold'), foreground=accent_color)
+    style.configure('Stat.TLabel', font=('Arial', 10, 'bold'), foreground='#FF6347')
+    style.configure('Success.TLabel', foreground='#7CFC00')
+    style.configure('Danger.TLabel', foreground='#FF4500')
+    
     style.map('TButton', 
-              foreground=[('active', 'white'), ('!active', 'white')],
-              background=[('active', '#6B6B6B'), ('!active', '#4A4A4A')])
+              foreground=[('active', fg_color), ('!active', fg_color)],
+              background=[('active', highlight_color), ('!active', secondary_color)])
 
 class LocalStorage:
     storage = {}
@@ -49,6 +72,7 @@ class AuthDAO:
             if response.status_code == 200:
                 data = response.json()
                 LocalStorage.set_item('access_token', data['access_token'])
+                LocalStorage.set_item('refresh_token', data['refresh_token'])
                 LocalStorage.set_item('user', json.dumps(data['user']))
                 return data['user']
             else:
@@ -62,7 +86,7 @@ class CharacterDAO:
     BASE_URL = "http://localhost:5000"
     
     @staticmethod
-    def create_character(name, race, char_class):
+    def create_character(name, race, char_class, background=""):
         try:
             token = LocalStorage.get_item('access_token')
             if not token:
@@ -74,12 +98,14 @@ class CharacterDAO:
                 json={
                     "name": name,
                     "race": race,
-                    "class": char_class
+                    "class": char_class,
+                    "background": background
                 },
                 headers=headers
             )
             return response.json() if response.status_code == 201 else None
-        except requests.exceptions.RequestException:
+        except requests.exceptions.RequestException as e:
+            messagebox.showerror("Error", str(e))
             return None
     
     @staticmethod
@@ -87,7 +113,7 @@ class CharacterDAO:
         try:
             token = LocalStorage.get_item('access_token')
             if not token:
-                return None
+                return []
                 
             headers = {"Authorization": f"Bearer {token}"}
             response = requests.get(
@@ -97,6 +123,22 @@ class CharacterDAO:
             return response.json()['characters'] if response.status_code == 200 else []
         except requests.exceptions.RequestException:
             return []
+    
+    @staticmethod
+    def get_character_detail(character_id):
+        try:
+            token = LocalStorage.get_item('access_token')
+            if not token:
+                return None
+                
+            headers = {"Authorization": f"Bearer {token}"}
+            response = requests.get(
+                f"{CharacterDAO.BASE_URL}/characters/{character_id}",
+                headers=headers
+            )
+            return response.json() if response.status_code == 200 else None
+        except requests.exceptions.RequestException:
+            return None
 
 class GameSessionDAO:
     BASE_URL = "http://localhost:5000"
@@ -158,8 +200,14 @@ class MainApp:
     def __init__(self, root):
         self.root = root
         self.root.title("RolPlayer")
-        self.root.geometry("1000x700")
-        self.root.minsize(800, 600)
+        self.root.geometry("1200x800")
+        self.root.minsize(1000, 700)
+        
+        # Configurar icono
+        try:
+            self.root.iconbitmap('icon.ico')  # Cambiar por tu ruta de icono
+        except:
+            pass
         
         configure_styles()
         self.main_frame = ttk.Frame(self.root)
@@ -178,14 +226,28 @@ class MainApp:
         header_frame = ttk.Frame(self.main_frame)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
         
-        ttk.Label(header_frame, text="RolPlayer", style="Title.TLabel").pack(side=tk.LEFT)
+        # Logo o título
+        logo_frame = ttk.Frame(header_frame)
+        logo_frame.pack(side=tk.LEFT)
+        
+        try:
+            logo_img = Image.open('logo.png')  # Cambiar por tu ruta de logo
+            logo_img = logo_img.resize((40, 40), Image.LANCZOS)
+            logo_photo = ImageTk.PhotoImage(logo_img)
+            logo_label = ttk.Label(logo_frame, image=logo_photo)
+            logo_label.image = logo_photo
+            logo_label.pack(side=tk.LEFT, padx=5)
+        except:
+            pass
+        
+        ttk.Label(logo_frame, text="RolPlayer", style="Title.TLabel").pack(side=tk.LEFT)
         
         if current_user:
             user_frame = ttk.Frame(header_frame)
             user_frame.pack(side=tk.RIGHT)
             
             ttk.Label(user_frame, 
-                     text=f"Usuario: {current_user['id']} (Rol: {current_user['role']})",
+                     text=f"Bienvenido, {current_user['username']} (Rol: {current_user['role'].title()})",
                      style="Header.TLabel").pack(side=tk.LEFT)
             
             ttk.Button(user_frame, text="Cerrar Sesión", command=self.logout).pack(side=tk.LEFT, padx=5)
@@ -194,104 +256,515 @@ class MainApp:
         content_frame = ttk.Frame(self.main_frame)
         content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
-        buttons = [
-            ("Crear Personaje", self.show_create_character),
-            ("Mis Personajes", self.show_characters),
-            ("Crear Partida", self.show_create_session),
-            ("Unirse a Partida", self.show_join_session)
-        ]
+        # Crear un notebook para organizar las secciones
+        notebook = ttk.Notebook(content_frame)
+        notebook.pack(fill=tk.BOTH, expand=True)
         
+        # Pestaña de Personajes
+        characters_tab = ttk.Frame(notebook)
+        notebook.add(characters_tab, text="Mis Personajes")
+        
+        # Pestaña de Partidas
+        sessions_tab = ttk.Frame(notebook)
+        notebook.add(sessions_tab, text="Partidas")
+        
+        # Pestaña de Combate (solo para Game Masters)
         if current_user and current_user['role'] == 'game_master':
-            buttons.append(("Iniciar Combate", self.show_start_combat))
+            combat_tab = ttk.Frame(notebook)
+            notebook.add(combat_tab, text="Combate")
         
-        for i, (text, command) in enumerate(buttons):
-            btn = ttk.Button(content_frame, text=text, command=command, width=25)
-            btn.grid(row=i//2, column=i%2, padx=10, pady=10, sticky="nsew")
+        # Contenido de la pestaña de Personajes
+        self.setup_characters_tab(characters_tab)
         
-        content_frame.grid_columnconfigure(0, weight=1)
-        content_frame.grid_columnconfigure(1, weight=1)
+        # Contenido de la pestaña de Partidas
+        self.setup_sessions_tab(sessions_tab)
+        
+        # Contenido de la pestaña de Combate
+        if current_user and current_user['role'] == 'game_master':
+            self.setup_combat_tab(combat_tab)
+    
+    def setup_characters_tab(self, tab):
+        # Frame para botones de acción
+        action_frame = ttk.Frame(tab)
+        action_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        ttk.Button(action_frame, text="Crear Nuevo Personaje", 
+                  command=self.show_create_character).pack(side=tk.LEFT, padx=5)
+        
+        ttk.Button(action_frame, text="Actualizar Lista", 
+                  command=lambda: self.load_characters_list(characters_list)).pack(side=tk.LEFT, padx=5)
+        
+        # Frame para la lista de personajes
+        list_frame = ttk.Frame(tab)
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Lista de personajes con más detalles
+        columns = ("ID", "Nombre", "Raza", "Clase", "Nivel", "Items", "Habilidades", "Hechizos")
+        characters_list = ttk.Treeview(list_frame, columns=columns, show="headings", height=15)
+        
+        for col in columns:
+            characters_list.heading(col, text=col)
+            characters_list.column(col, width=100, anchor=tk.CENTER)
+        
+        characters_list.column("Nombre", width=150)
+        
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=characters_list.yview)
+        characters_list.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        characters_list.pack(fill=tk.BOTH, expand=True)
+        
+        # Botón para ver detalles
+        ttk.Button(list_frame, text="Ver Detalles", 
+                  command=lambda: self.show_character_detail(characters_list)).pack(pady=10)
+        
+        # Cargar personajes
+        self.load_characters_list(characters_list)
+    
+    def load_characters_list(self, treeview):
+        # Limpiar lista actual
+        for item in treeview.get_children():
+            treeview.delete(item)
+        
+        # Obtener personajes del usuario
+        characters = CharacterDAO.get_characters()
+        
+        # Agregar personajes a la lista
+        for char in characters:
+            treeview.insert("", tk.END, values=(
+                char['id'],
+                char['name'],
+                char['race'],
+                char['class'],
+                char['level'],
+                char['inventory_count'],
+                char['skills_count'],
+                char['spells_count']
+            ))
+    
+    def show_character_detail(self, treeview):
+        selected_item = treeview.focus()
+        if not selected_item:
+            messagebox.showwarning("Advertencia", "Selecciona un personaje primero")
+            return
+        
+        character_id = treeview.item(selected_item)['values'][0]
+        character = CharacterDAO.get_character_detail(character_id)
+        
+        if not character:
+            messagebox.showerror("Error", "No se pudo obtener la información del personaje")
+            return
+        
+        detail_window = tk.Toplevel(self.root)
+        detail_window.title(f"Detalles del Personaje: {character['name']}")
+        detail_window.geometry("800x600")
+        
+        # Notebook para organizar las secciones
+        notebook = ttk.Notebook(detail_window)
+        notebook.pack(fill=tk.BOTH, expand=True)
+        
+        # Pestaña de Información General
+        general_tab = ttk.Frame(notebook)
+        notebook.add(general_tab, text="Información General")
+        self.setup_character_general_tab(general_tab, character)
+        
+        # Pestaña de Estadísticas
+        stats_tab = ttk.Frame(notebook)
+        notebook.add(stats_tab, text="Estadísticas")
+        self.setup_character_stats_tab(stats_tab, character)
+        
+        # Pestaña de Inventario
+        inventory_tab = ttk.Frame(notebook)
+        notebook.add(inventory_tab, text="Inventario")
+        self.setup_character_inventory_tab(inventory_tab, character)
+        
+        # Pestaña de Habilidades
+        skills_tab = ttk.Frame(notebook)
+        notebook.add(skills_tab, text="Habilidades")
+        self.setup_character_skills_tab(skills_tab, character)
+    
+    def setup_character_general_tab(self, tab, character):
+        # Frame principal con scroll
+        main_frame = ttk.Frame(tab)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        canvas = tk.Canvas(main_frame)
+        scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+            )
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Contenido
+        ttk.Label(scrollable_frame, text=f"Nombre: {character['name']}", 
+                 font=('Arial', 14, 'bold')).pack(pady=10, anchor=tk.W)
+        
+        # Imagen del personaje (placeholder)
+        try:
+            race_img = Image.open(f"races/{character['race'].lower()}.png")
+            race_img = race_img.resize((150, 150), Image.LANCZOS)
+            race_photo = ImageTk.PhotoImage(race_img)
+            race_label = ttk.Label(scrollable_frame, image=race_photo)
+            race_label.image = race_photo
+            race_label.pack(pady=10)
+        except:
+            pass
+        
+        # Info básica
+        info_frame = ttk.Frame(scrollable_frame)
+        info_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        ttk.Label(info_frame, text=f"Raza: {character['race']}", width=20).pack(side=tk.LEFT)
+        ttk.Label(info_frame, text=f"Clase: {character['class']}").pack(side=tk.LEFT)
+        
+        info_frame2 = ttk.Frame(scrollable_frame)
+        info_frame2.pack(fill=tk.X, padx=10, pady=5)
+        
+        ttk.Label(info_frame2, text=f"Nivel: {character['level']}", width=20).pack(side=tk.LEFT)
+        ttk.Label(info_frame2, text=f"Experiencia: {character['experience']}").pack(side=tk.LEFT)
+        
+        # Barra de salud
+        health_frame = ttk.Frame(scrollable_frame)
+        health_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        ttk.Label(health_frame, text="Salud:").pack(side=tk.LEFT)
+        
+        health_percent = (character['health']['current'] / character['health']['max']) * 100
+        health_color = '#4CAF50' if health_percent > 50 else '#FFC107' if health_percent > 25 else '#F44336'
+        
+        health_canvas = tk.Canvas(health_frame, width=200, height=20, bg='#2E2E2E', highlightthickness=0)
+        health_canvas.create_rectangle(0, 0, health_percent * 2, 20, fill=health_color, outline='')
+        health_canvas.create_text(100, 10, text=f"{character['health']['current']}/{character['health']['max']}", 
+                                fill='white', font=('Arial', 10))
+        health_canvas.pack(side=tk.LEFT, padx=5)
+        
+        # Oro
+        gold_frame = ttk.Frame(scrollable_frame)
+        gold_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        ttk.Label(gold_frame, text="Oro:").pack(side=tk.LEFT)
+        ttk.Label(gold_frame, text=f"{character['gold']} monedas", style="Success.TLabel").pack(side=tk.LEFT)
+        
+        # Background
+        background_frame = ttk.Frame(scrollable_frame)
+        background_frame.pack(fill=tk.BOTH, padx=10, pady=10)
+        
+        ttk.Label(background_frame, text="Historia del Personaje:", style="Header.TLabel").pack(anchor=tk.W)
+        
+        background_text = scrolledtext.ScrolledText(
+            background_frame, 
+            wrap=tk.WORD, 
+            width=60, 
+            height=10,
+            bg='#4A4A4A',
+            fg='white',
+            insertbackground='white',
+            font=('Arial', 10)
+        )
+        background_text.insert(tk.END, character['background'] or "Este personaje no tiene una historia definida.")
+        background_text.config(state=tk.DISABLED)
+        background_text.pack(fill=tk.BOTH, expand=True)
+    
+    def setup_character_stats_tab(self, tab, character):
+        # Frame principal
+        main_frame = ttk.Frame(tab)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Crear un frame para cada estadística
+        stats = character['stats']
+        
+        # Fuerza
+        str_frame = ttk.Frame(main_frame)
+        str_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(str_frame, text="Fuerza:", width=15, style="Stat.TLabel").pack(side=tk.LEFT)
+        ttk.Label(str_frame, text=f"{stats['strength']} ({self.calculate_modifier(stats['strength'])})").pack(side=tk.LEFT)
+        
+        # Destreza
+        dex_frame = ttk.Frame(main_frame)
+        dex_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(dex_frame, text="Destreza:", width=15, style="Stat.TLabel").pack(side=tk.LEFT)
+        ttk.Label(dex_frame, text=f"{stats['dexterity']} ({self.calculate_modifier(stats['dexterity'])})").pack(side=tk.LEFT)
+        
+        # Constitución
+        con_frame = ttk.Frame(main_frame)
+        con_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(con_frame, text="Constitución:", width=15, style="Stat.TLabel").pack(side=tk.LEFT)
+        ttk.Label(con_frame, text=f"{stats['constitution']} ({self.calculate_modifier(stats['constitution'])})").pack(side=tk.LEFT)
+        
+        # Inteligencia
+        int_frame = ttk.Frame(main_frame)
+        int_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(int_frame, text="Inteligencia:", width=15, style="Stat.TLabel").pack(side=tk.LEFT)
+        ttk.Label(int_frame, text=f"{stats['intelligence']} ({self.calculate_modifier(stats['intelligence'])})").pack(side=tk.LEFT)
+        
+        # Sabiduría
+        wis_frame = ttk.Frame(main_frame)
+        wis_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(wis_frame, text="Sabiduría:", width=15, style="Stat.TLabel").pack(side=tk.LEFT)
+        ttk.Label(wis_frame, text=f"{stats['wisdom']} ({self.calculate_modifier(stats['wisdom'])})").pack(side=tk.LEFT)
+        
+        # Carisma
+        cha_frame = ttk.Frame(main_frame)
+        cha_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(cha_frame, text="Carisma:", width=15, style="Stat.TLabel").pack(side=tk.LEFT)
+        ttk.Label(cha_frame, text=f"{stats['charisma']} ({self.calculate_modifier(stats['charisma'])})").pack(side=tk.LEFT)
+        
+        # Fecha de creación
+        created_frame = ttk.Frame(main_frame)
+        created_frame.pack(fill=tk.X, pady=10)
+        ttk.Label(created_frame, text="Creado el:", width=15).pack(side=tk.LEFT)
+        ttk.Label(created_frame, text=character['created_at']).pack(side=tk.LEFT)
+    
+    def calculate_modifier(self, stat):
+        modifier = (stat - 10) // 2
+        return f"+{modifier}" if modifier >= 0 else str(modifier)
+    
+    def setup_character_inventory_tab(self, tab, character):
+        if not character.get('items'):
+            ttk.Label(tab, text="Este personaje no tiene objetos en su inventario.").pack(pady=50)
+            return
+        
+        # Frame principal con scroll
+        main_frame = ttk.Frame(tab)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Treeview para mostrar los items
+        columns = ("Nombre", "Tipo", "Rareza", "Valor", "Cantidad", "Equipado")
+        tree = ttk.Treeview(main_frame, columns=columns, show="headings", height=10)
+        
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=100, anchor=tk.CENTER)
+        
+        tree.column("Nombre", width=150)
+        
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        tree.pack(fill=tk.BOTH, expand=True)
+        
+        # Agregar items
+        for item in character['items']:
+            tree.insert("", tk.END, values=(
+                item['name'],
+                item['type'],
+                item['rarity'],
+                item['value'],
+                item['quantity'],
+                "Sí" if item['is_equipped'] else "No"
+            ))
+    
+    def setup_character_skills_tab(self, tab, character):
+        if not character.get('skills'):
+            ttk.Label(tab, text="Este personaje no tiene habilidades registradas.").pack(pady=50)
+            return
+        
+        # Frame principal con scroll
+        main_frame = ttk.Frame(tab)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Treeview para mostrar las habilidades
+        columns = ("Nombre", "Atributo", "Bono de Competencia")
+        tree = ttk.Treeview(main_frame, columns=columns, show="headings", height=10)
+        
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=150, anchor=tk.CENTER)
+        
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        tree.pack(fill=tk.BOTH, expand=True)
+        
+        # Agregar habilidades
+        for skill in character['skills']:
+            tree.insert("", tk.END, values=(
+                skill['name'],
+                skill['ability'],
+                f"+{skill['proficiency_bonus']}"
+            ))
+    
+    def setup_sessions_tab(self, tab):
+        # Frame para botones de acción
+        action_frame = ttk.Frame(tab)
+        action_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        ttk.Button(action_frame, text="Crear Nueva Partida", 
+                  command=self.show_create_session).pack(side=tk.LEFT, padx=5)
+        
+        ttk.Button(action_frame, text="Unirse a Partida", 
+                  command=self.show_join_session).pack(side=tk.LEFT, padx=5)
+        
+        # Frame para la lista de partidas (placeholder)
+        ttk.Label(tab, text="Funcionalidad de partidas en desarrollo...").pack(pady=50)
+    
+    def setup_combat_tab(self, tab):
+        # Frame para botones de acción
+        action_frame = ttk.Frame(tab)
+        action_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        ttk.Button(action_frame, text="Iniciar Combate", 
+                  command=self.show_start_combat).pack(side=tk.LEFT, padx=5)
+        
+        # Frame para el simulador de combate
+        combat_frame = ttk.Frame(tab)
+        combat_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        ttk.Label(combat_frame, text="Simulador de Combate", style="Title.TLabel").pack(pady=10)
+        
+        # Ejemplo de visualización de combate
+        canvas = tk.Canvas(combat_frame, bg='#2E2E2E', highlightthickness=0)
+        canvas.pack(fill=tk.BOTH, expand=True)
+        
+        # Dibujar un ejemplo de combate
+        self.draw_combat_example(canvas)
+    
+    def draw_combat_example(self, canvas):
+        canvas.delete("all")
+        
+        # Dibujar área de combate
+        canvas.create_rectangle(50, 50, 750, 550, outline='#FFD700', width=2)
+        
+        # Dibujar personajes aliados
+        for i in range(3):
+            x = 150 + i * 200
+            y = 150
+            canvas.create_oval(x-30, y-30, x+30, y+30, fill='#4CAF50', outline='white')
+            canvas.create_text(x, y, text=f"A{i+1}", fill='white', font=('Arial', 12, 'bold'))
+        
+        # Dibujar enemigos
+        for i in range(4):
+            x = 100 + i * 150
+            y = 400
+            canvas.create_oval(x-30, y-30, x+30, y+30, fill='#F44336', outline='white')
+            canvas.create_text(x, y, text=f"E{i+1}", fill='white', font=('Arial', 12, 'bold'))
+        
+        # Dibujar barra de iniciativa
+        canvas.create_rectangle(800, 50, 950, 550, outline='#FFD700', width=2)
+        canvas.create_text(875, 30, text="Iniciativa", fill='white', font=('Arial', 10, 'bold'))
+        
+        initiatives = ["A2 (18)", "E3 (15)", "A1 (12)", "E1 (10)", "E4 (8)", "A3 (5)", "E2 (3)"]
+        
+        for i, init in enumerate(initiatives):
+            y = 100 + i * 60
+            canvas.create_text(875, y, text=init, fill='white', font=('Arial', 10))
+            
+            if i == 0:  # Resaltar turno actual
+                canvas.create_rectangle(810, y-15, 940, y+15, outline='#FFD700', width=2)
     
     def show_create_character(self):
         form_window = tk.Toplevel(self.root)
         form_window.title("Crear Personaje")
-        form_window.geometry("400x300")
+        form_window.geometry("500x400")
         
-        ttk.Label(form_window, text="Crear Personaje", style="Title.TLabel").pack(pady=10)
+        # Establecer icono
+        try:
+            form_window.iconbitmap('icon.ico')
+        except:
+            pass
         
-        form_frame = ttk.Frame(form_window)
-        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        ttk.Label(form_window, text="Crear Nuevo Personaje", style="Title.TLabel").pack(pady=10)
         
-        ttk.Label(form_frame, text="Nombre:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.E)
-        name_entry = ttk.Entry(form_frame)
-        name_entry.grid(row=0, column=1, padx=5, pady=5)
+        # Notebook para organizar el formulario
+        notebook = ttk.Notebook(form_window)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        ttk.Label(form_frame, text="Raza:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.E)
-        race_combobox = ttk.Combobox(form_frame, values=["Humano", "Elfo", "Enano", "Orco"])
-        race_combobox.grid(row=1, column=1, padx=5, pady=5)
+        # Pestaña de Información Básica
+        basic_tab = ttk.Frame(notebook)
+        notebook.add(basic_tab, text="Información Básica")
         
-        ttk.Label(form_frame, text="Clase:").grid(row=2, column=0, padx=5, pady=5, sticky=tk.E)
-        class_combobox = ttk.Combobox(form_frame, values=["Guerrero", "Mago", "Ladrón", "Clérigo"])
-        class_combobox.grid(row=2, column=1, padx=5, pady=5)
+        ttk.Label(basic_tab, text="Nombre:").pack(pady=5)
+        self.name_entry = ttk.Entry(basic_tab)
+        self.name_entry.pack(pady=5, fill=tk.X, padx=20)
         
-        ttk.Button(form_frame, text="Crear", command=lambda: self.create_character(
-            name_entry.get(),
-            race_combobox.get(),
-            class_combobox.get(),
-            form_window
-        )).grid(row=3, columnspan=2, pady=10)
+        ttk.Label(basic_tab, text="Raza:").pack(pady=5)
+        self.race_combobox = ttk.Combobox(basic_tab, values=["Humano", "Elfo", "Enano", "Orco", "Mediano"])
+        self.race_combobox.pack(pady=5, fill=tk.X, padx=20)
+        
+        ttk.Label(basic_tab, text="Clase:").pack(pady=5)
+        self.class_combobox = ttk.Combobox(basic_tab, values=["Guerrero", "Mago", "Pícaro", "Clérigo", "Bárbaro", "Bardo"])
+        self.class_combobox.pack(pady=5, fill=tk.X, padx=20)
+        
+        # Pestaña de Historia
+        background_tab = ttk.Frame(notebook)
+        notebook.add(background_tab, text="Historia")
+        
+        ttk.Label(background_tab, text="Historia del Personaje:").pack(pady=5)
+        self.background_text = scrolledtext.ScrolledText(
+            background_tab, 
+            wrap=tk.WORD, 
+            width=40, 
+            height=10,
+            bg='#4A4A4A',
+            fg='white',
+            insertbackground='white',
+            font=('Arial', 10)
+        )
+        self.background_text.pack(pady=5, fill=tk.BOTH, expand=True, padx=10)
+        
+        # Botón de creación
+        ttk.Button(form_window, text="Crear Personaje", 
+                  command=lambda: self.create_character(
+                      self.name_entry.get(),
+                      self.race_combobox.get(),
+                      self.class_combobox.get(),
+                      self.background_text.get("1.0", tk.END),
+                      form_window
+                  )).pack(pady=10)
     
-    def create_character(self, name, race, char_class, window):
+    def create_character(self, name, race, char_class, background, window):
         if not all([name, race, char_class]):
-            messagebox.showwarning("Error", "Todos los campos son obligatorios")
+            messagebox.showwarning("Error", "Nombre, raza y clase son obligatorios")
             return
         
-        result = CharacterDAO.create_character(name, race, char_class)
+        result = CharacterDAO.create_character(name, race, char_class, background.strip())
         if result:
             messagebox.showinfo("Éxito", "Personaje creado exitosamente")
             window.destroy()
-            self.show_main_menu()
+            self.show_main_menu()  # Recargar la interfaz
         else:
             messagebox.showerror("Error", "No se pudo crear el personaje")
-    
-    def show_characters(self):
-        characters = CharacterDAO.get_characters()
-        list_window = tk.Toplevel(self.root)
-        list_window.title("Mis Personajes")
-        list_window.geometry("600x400")
-        
-        tree = ttk.Treeview(list_window, columns=("ID", "Nombre", "Raza", "Clase"), show="headings")
-        tree.heading("ID", text="ID")
-        tree.heading("Nombre", text="Nombre")
-        tree.heading("Raza", text="Raza")
-        tree.heading("Clase", text="Clase")
-        
-        for char in characters:
-            tree.insert("", tk.END, values=(char['id'], char['name'], char['race'], char['class']))
-        
-        tree.pack(fill=tk.BOTH, expand=True)
     
     def show_create_session(self):
         form_window = tk.Toplevel(self.root)
         form_window.title("Crear Partida")
-        form_window.geometry("300x150")
+        form_window.geometry("400x200")
         
-        ttk.Label(form_window, text="ID Aventura:").pack(pady=5)
-        adventure_entry = ttk.Entry(form_window)
-        adventure_entry.pack(pady=5)
+        ttk.Label(form_window, text="Crear Nueva Partida", style="Title.TLabel").pack(pady=10)
         
-        ttk.Button(form_window, text="Crear", command=lambda: self.create_session(
-            adventure_entry.get(),
-            form_window
-        )).pack(pady=10)
+        form_frame = ttk.Frame(form_window)
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        
+        ttk.Label(form_frame, text="ID de Aventura:").pack(pady=5)
+        adventure_entry = ttk.Entry(form_frame)
+        adventure_entry.pack(pady=5, fill=tk.X)
+        
+        ttk.Button(form_frame, text="Crear Partida", 
+                  command=lambda: self.create_session(
+                      adventure_entry.get(),
+                      form_window
+                  )).pack(pady=10)
     
     def create_session(self, adventure_id, window):
         if not adventure_id.isdigit():
-            messagebox.showwarning("Error", "ID debe ser numérico")
+            messagebox.showwarning("Error", "El ID de aventura debe ser numérico")
             return
         
         result = GameSessionDAO.create_session(int(adventure_id))
         if result:
-            messagebox.showinfo("Éxito", "Partida creada exitosamente")
+            messagebox.showinfo("Éxito", f"Partida creada exitosamente. ID: {result.get('session_id', 'N/A')}")
             window.destroy()
         else:
             messagebox.showerror("Error", "No se pudo crear la partida")
@@ -299,30 +772,36 @@ class MainApp:
     def show_join_session(self):
         form_window = tk.Toplevel(self.root)
         form_window.title("Unirse a Partida")
-        form_window.geometry("300x200")
+        form_window.geometry("400x250")
         
-        ttk.Label(form_window, text="ID Partida:").pack(pady=5)
-        session_entry = ttk.Entry(form_window)
-        session_entry.pack(pady=5)
+        ttk.Label(form_window, text="Unirse a Partida", style="Title.TLabel").pack(pady=10)
         
-        ttk.Label(form_window, text="ID Personaje:").pack(pady=5)
-        char_entry = ttk.Entry(form_window)
-        char_entry.pack(pady=5)
+        form_frame = ttk.Frame(form_window)
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         
-        ttk.Button(form_window, text="Unirse", command=lambda: self.join_session(
-            session_entry.get(),
-            char_entry.get(),
-            form_window
-        )).pack(pady=10)
+        ttk.Label(form_frame, text="ID de Partida:").pack(pady=5)
+        session_entry = ttk.Entry(form_frame)
+        session_entry.pack(pady=5, fill=tk.X)
+        
+        ttk.Label(form_frame, text="ID de Personaje:").pack(pady=5)
+        char_entry = ttk.Entry(form_frame)
+        char_entry.pack(pady=5, fill=tk.X)
+        
+        ttk.Button(form_frame, text="Unirse a Partida", 
+                  command=lambda: self.join_session(
+                      session_entry.get(),
+                      char_entry.get(),
+                      form_window
+                  )).pack(pady=10)
     
     def join_session(self, session_id, char_id, window):
         if not all([session_id.isdigit(), char_id.isdigit()]):
-            messagebox.showwarning("Error", "IDs deben ser numéricos")
+            messagebox.showwarning("Error", "Los IDs deben ser numéricos")
             return
         
         result = GameSessionDAO.join_session(int(session_id), int(char_id))
         if result:
-            messagebox.showinfo("Éxito", "Unido a la partida exitosamente")
+            messagebox.showinfo("Éxito", "Te has unido a la partida exitosamente")
             window.destroy()
         else:
             messagebox.showerror("Error", "No se pudo unir a la partida")
@@ -330,20 +809,26 @@ class MainApp:
     def show_start_combat(self):
         form_window = tk.Toplevel(self.root)
         form_window.title("Iniciar Combate")
-        form_window.geometry("300x100")
+        form_window.geometry("400x150")
         
-        ttk.Label(form_window, text="ID Partida:").pack(pady=5)
-        session_entry = ttk.Entry(form_window)
-        session_entry.pack(pady=5)
+        ttk.Label(form_window, text="Iniciar Combate", style="Title.TLabel").pack(pady=10)
         
-        ttk.Button(form_window, text="Iniciar", command=lambda: self.start_combat(
-            session_entry.get(),
-            form_window
-        )).pack(pady=10)
+        form_frame = ttk.Frame(form_window)
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        
+        ttk.Label(form_frame, text="ID de Partida:").pack(pady=5)
+        session_entry = ttk.Entry(form_frame)
+        session_entry.pack(pady=5, fill=tk.X)
+        
+        ttk.Button(form_frame, text="Iniciar Combate", 
+                  command=lambda: self.start_combat(
+                      session_entry.get(),
+                      form_window
+                  )).pack(pady=10)
     
     def start_combat(self, session_id, window):
         if not session_id.isdigit():
-            messagebox.showwarning("Error", "ID debe ser numérico")
+            messagebox.showwarning("Error", "El ID de partida debe ser numérico")
             return
         
         result = CombatDAO.start_combat(int(session_id))
@@ -355,6 +840,7 @@ class MainApp:
     
     def logout(self):
         LocalStorage.remove_item('access_token')
+        LocalStorage.remove_item('refresh_token')
         LocalStorage.remove_item('user')
         self.root.destroy()
         show_login_window()
@@ -363,24 +849,56 @@ class LoginWindow:
     def __init__(self, root):
         self.root = root
         self.root.title("RolPlayer - Login")
-        self.root.geometry("400x200")
+        self.root.geometry("500x300")
+        
+        # Establecer icono
+        try:
+            self.root.iconbitmap('icon.ico')
+        except:
+            pass
         
         configure_styles()
         
+        # Frame principal
         main_frame = ttk.Frame(self.root)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
         
-        ttk.Label(main_frame, text="Iniciar Sesión", style="Title.TLabel").pack(pady=10)
+        # Frame para el logo/título
+        logo_frame = ttk.Frame(main_frame)
+        logo_frame.pack(pady=20)
         
-        ttk.Label(main_frame, text="Usuario:").pack(pady=5)
-        self.user_entry = ttk.Entry(main_frame)
-        self.user_entry.pack(pady=5)
+        try:
+            logo_img = Image.open('logo.png')
+            logo_img = logo_img.resize((80, 80), Image.LANCZOS)
+            logo_photo = ImageTk.PhotoImage(logo_img)
+            logo_label = ttk.Label(logo_frame, image=logo_photo)
+            logo_label.image = logo_photo
+            logo_label.pack(side=tk.LEFT, padx=10)
+        except:
+            pass
         
-        ttk.Label(main_frame, text="Contraseña:").pack(pady=5)
-        self.pass_entry = ttk.Entry(main_frame, show="*")
-        self.pass_entry.pack(pady=5)
+        ttk.Label(logo_frame, text="RolPlayer", style="Title.TLabel", 
+                 font=('Arial', 24, 'bold')).pack(side=tk.LEFT)
         
-        ttk.Button(main_frame, text="Ingresar", command=self.do_login).pack(pady=10)
+        # Frame para el formulario
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill=tk.X, padx=50, pady=10)
+        
+        ttk.Label(form_frame, text="Usuario:").pack(pady=5)
+        self.user_entry = ttk.Entry(form_frame)
+        self.user_entry.pack(pady=5, fill=tk.X)
+        
+        ttk.Label(form_frame, text="Contraseña:").pack(pady=5)
+        self.pass_entry = ttk.Entry(form_frame, show="*")
+        self.pass_entry.pack(pady=5, fill=tk.X)
+        
+        ttk.Button(form_frame, text="Ingresar", command=self.do_login).pack(pady=20)
+        
+        # Enfocar el campo de usuario al inicio
+        self.user_entry.focus_set()
+        
+        # Configurar evento Enter para iniciar sesión
+        self.pass_entry.bind('<Return>', lambda event: self.do_login())
     
     def do_login(self):
         user = self.user_entry.get()
