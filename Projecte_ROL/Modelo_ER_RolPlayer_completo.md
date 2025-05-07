@@ -1,4 +1,4 @@
-# Modelo Entidad-Relación de la Base de Datos RolPlayer
+# Modelo Entidad-Relación de la Base de Datos RolPlayer (Con Relaciones)
 
 ```mermaid
 erDiagram
@@ -225,4 +225,31 @@ erDiagram
         TIMESTAMP updated_at
     }
 
+    active_combats }--|| game_sessions : "session_id to id"
+    active_combats }--|| combat_encounters : "encounter_id to id"
+    adventures }--|| users : "created_by to id"
+    characters }--|| users : "user_id to id"
+    character_items }--|| characters : "character_id to id"
+    character_items }--|| items : "item_id to id"
+    character_items }--|| characters : "character_id to id"
+    character_skills }--|| skills : "skill_id to id"
+    character_items }--|| characters : "character_id to id"
+    character_spells }--|| spells : "spell_id to id"
+    combat_encounters }--|| scenes : "scene_id to id"
+    combat_participants }--|| active_combats : "combat_id to id"
+    character_items }--|| characters : "character_id to id"
+    combat_participants }--|| enemies : "enemy_id to id"
+    active_combats }--|| combat_encounters : "encounter_id to id"
+    combat_participants }--|| enemies : "enemy_id to id"
+    active_combats }--|| game_sessions : "session_id to id"
+    character_items }--|| characters : "character_id to id"
+    game_sessions }--|| adventures : "adventure_id to id"
+    game_sessions }--|| users : "game_master_id to id"
+    game_sessions }--|| scenes : "current_scene_id to id"
+    game_sessions }--|| adventures : "adventure_id to id"
+    combat_encounters }--|| scenes : "scene_id to id"
+    scene_options }--|| scenes : "next_scene_id to id"
+    scene_options }--|| items : "item_required to id"
+    active_combats }--|| game_sessions : "session_id to id"
+    character_items }--|| characters : "character_id to id"
 ```
