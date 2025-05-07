@@ -1,0 +1,19 @@
+sequenceDiagram
+    participant Usuario
+    participant App
+    participant Backend as Backend (Flask)
+    participant BBDD as Base de Datos (MySQL)
+
+    Usuario->>App: Ingresa credenciales (username y password)
+    App->>Backend: Envía credenciales a /login
+    Backend->>BBDD: Consulta en la tabla users
+    BBDD-->>Backend: Devuelve usuario si las credenciales son válidas
+    alt Credenciales válidas
+        Backend->>BBDD: Consulta personajes asociados al usuario
+        BBDD-->>Backend: Devuelve lista de personajes
+        Backend-->>App: Devuelve access_token, refresh_token y datos del usuario
+        App-->>Usuario: Muestra mensaje de éxito
+    else Credenciales inválidas
+        Backend-->>App: Devuelve error (401 Unauthorized)
+        App-->>Usuario: Muestra mensaje de error
+    end
