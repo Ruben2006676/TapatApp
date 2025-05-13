@@ -1,15 +1,24 @@
-flowchart TD
-    A[MainApp (Tkinter GUI)] <--> B[AuthDAO]
-    A <--> C[CharacterDAO]
-    A <--> D[GameSessionDAO]
-    A <--> E[CombatDAO]
-    A <--> F[LocalStorage]
-    A <--> G[Estilos (configure_styles)]
-    A <--> H[tk.Tk root window]
-    A <--> I[Widgets y Tabs]
-    B <--> J[API /login]
-    C <--> K[API /characters]
-    D <--> L[API /game_sessions]
-    E <--> M[API /combat/start]
-    F <--> N[Tokens y Usuario en memoria]
-    I <--> O[ttk, tk, ImageTk, ScrolledText]
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#f0f8ff'}}}%%
+graph TD
+    subgraph Frontend[Tkinter]
+        A[MainApp] --> B[LoginWindow]
+        A --> C[Character Manager]
+        A --> D[Game Session Manager]
+        A --> E[Combat System]
+        
+        B -->|AuthDAO| F[Backend]
+        C -->|CharacterDAO| F
+        D -->|GameSessionDAO| F
+        E -->|CombatDAO| F
+        
+        C --> G[Create/View Characters]
+        D --> H[Create/Join Sessions]
+        E --> I[Start/View Combat]
+    end
+    
+    subgraph Backend[Flask]
+        F
+    end
+    
+    style A fill:#e6f7ff
+    style F fill:#b2d3c2
