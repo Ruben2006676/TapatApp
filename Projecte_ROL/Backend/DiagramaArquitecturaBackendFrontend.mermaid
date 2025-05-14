@@ -1,10 +1,10 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffd8d8', 'edgeLabelBackground':'#ffffff', 'backgroundColor': '#ffffff', 'nodeTextColor': '#333333', 'lineColor': '#333333', 'arrowheadColor': '#333333'}}}%%
 graph TD
     %% Frontend %%
-    A[MainApp] --> B[LoginWindow]
-    A --> C[Character Manager]
-    A --> D[Game Session Manager]
-    A --> E[Combat System]
+    A[Aplicación Principal] --> B[Ventana de Inicio de Sesión]
+    A --> C[Gestor de Personajes]
+    A --> D[Gestor de Sesiones de Juego]
+    A --> E[Sistema de Combate]
     
     B -->|AuthDAO| F[Backend]
     C -->|CharacterDAO| F
@@ -12,21 +12,21 @@ graph TD
     E -->|CombatDAO| F
 
     %% Backend %%
-    F[Flask Backend] -->|Routing| G[Controllers]
-    G -->|Authentication| H[JWT Manager]
-    G -->|Data Access| I[Database Layer]
-    G -->|Business Logic| J[Services]
+    F[Backend Flask] -->|Rutas| G[Controladores]
+    G -->|Autenticación| H[Gestor JWT]
+    G -->|Acceso a Datos| I[Capa de Base de Datos]
+    G -->|Lógica de Negocio| J[Servicios]
 
-    %% Database %%
-    I -->|MySQL Connector| K[(MySQL Database)]
+    %% Base de Datos %%
+    I -->|Conector MySQL| K[(Base de Datos MySQL)]
     
-    %% Simplified Routes %%
-    G --> L[Login / Auth]
-    G --> M[Character Management]
-    G --> N[Game Sessions]
-    G --> O[Combat System]
+    %% Rutas Simplificadas %%
+    G --> L[Inicio de Sesión / Autenticación]
+    G --> M[Gestión de Personajes]
+    G --> N[Sesiones de Juego]
+    G --> O[Sistema de Combate]
 
-    %% Styling %%
+    %% Estilo %%
     style A fill:#e6f7ff
     style B fill:#f9d5e5,stroke:#333
     style F fill:#b2d3c2,stroke:#333
