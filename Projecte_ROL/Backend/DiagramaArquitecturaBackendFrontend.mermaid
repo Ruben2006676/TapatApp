@@ -1,15 +1,28 @@
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffd8d8', 'edgeLabelBackground':'#ffffff'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#f0f8ff', 'edgeLabelBackground':'#ffffff'}}}%%
 graph TD
-    subgraph Frontend
-        F[Client App] -->|HTTP Requests| B
+
+    subgraph Frontend[Tkinter Client]
+        A[MainApp] --> B[LoginWindow]
+        A --> C[Character Manager]
+        A --> D[Game Session Manager]
+        A --> E[Combat System]
+        
+        B -->|AuthDAO| F[Backend API]
+        C -->|CharacterDAO| F
+        D -->|GameSessionDAO| F
+        E -->|CombatDAO| F
+        
+        C --> G[Create/View Characters]
+        D --> H[Create/Join Sessions]
+        E --> I[Start/View Combat]
     end
 
-    subgraph Backend[Backend - Flask]
-        B[Flask App] -->|Routing| C[Controllers]
-        C -->|Authentication| J[JWT Manager]
-        C -->|Data Access| D[Database Layer]
-        C -->|Business Logic| S[Services]
-        
+    subgraph Backend[Flask Backend]
+        F -->|Routing| C1[Controllers]
+        C1 -->|Authentication| J[JWT Manager]
+        C1 -->|Data Access| D1[Database Layer]
+        C1 -->|Business Logic| S[Services]
+
         subgraph Authentication
             J -->|Create Tokens| L[Login]
             J -->|Verify Tokens| P[Protected Routes]
@@ -31,7 +44,7 @@ graph TD
         end
 
         subgraph Database Layer
-            D -->|MySQL Connector| DB[(MySQL Database)]
+            D1 -->|MySQL Connector| DB[(MySQL Database)]
             DB -->|users| UD[User Data]
             DB -->|characters| CDB[Characters]
             DB -->|game_sessions| GDB[Game Sessions]
@@ -40,7 +53,8 @@ graph TD
         end
     end
 
-    style B fill:#f9d5e5,stroke:#333
-    style J fill:#e3eaa7,stroke:#333
+    style A fill:#e6f7ff
+    style F fill:#b2d3c2
     style DB fill:#b2d3c2,stroke:#333
-    style F fill:#82b4d6,stroke:#333
+    style J fill:#e3eaa7,stroke:#333
+    style C1 fill:#f9d5e5,stroke:#333
