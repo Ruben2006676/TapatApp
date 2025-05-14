@@ -1,32 +1,61 @@
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#f0f8ff', 'edgeLabelBackground':'#ffffff'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffd8d8', 'edgeLabelBackground':'#ffffff'}}}%%
 graph TD
-
-    subgraph Frontend [ Frontend (Tkinter Desktop App)]
-        A1[Login Window]
-        A2[Character Manager]
-        A3[Game Session Manager]
-        A4[Combat Interface]
-
-        A1 -->|Auth Requests| B[Flask API]
-        A2 -->|Character Requests| B
-        A3 -->|Session Requests| B
-        A4 -->|Combat Actions| B
+    subgraph Frontend[Tkinter]
+        A[MainApp] --> B[LoginWindow]
+        A --> C[Character Manager]
+        A --> D[Game Session Manager]
+        A --> E[Combat System]
+        
+        B -->|AuthDAO| F[Backend]
+        C -->|CharacterDAO| F
+        D -->|GameSessionDAO| F
+        E -->|CombatDAO| F
+        
+        C --> G[Create/View Characters]
+        D --> H[Create/Join Sessions]
+        E --> I[Start/View Combat]
     end
 
-    subgraph Backend [🛠️ Backend (Flask + MySQL)]
-        B[Flask API] --> C[Controllers & Auth (JWT)]
-        C --> D[Services]
-        D --> E[(MySQL Database)]
+    subgraph Backend[Backend - Flask]
+        F[Flask App] -->|Routing| C[Controllers]
+        C -->|Authentication| J[JWT Manager]
+        C -->|Data Access| D[Database Layer]
+        C -->|Business Logic| S[Services]
+        
+        subgraph Authentication
+            J -->|Create Tokens| L[Login]
+            J -->|Verify Tokens| P[Protected Routes]
+        end
+
+        subgraph Controllers
+            L -->|POST /login| U[User Auth]
+            P -->|GET/POST /characters| CH[Character Mgmt]
+            P -->|GET/POST /game_sessions| GS[Game Sessions]
+            P -->|POST /combat| CM[Combat System]
+            P -->|POST /game_logs| GL[Action Logging]
+        end
+
+        subgraph Services
+            CH -->|Validate Data| CD[Character Domain]
+            GS -->|Session Logic| GD[Game Domain]
+            CM -->|Combat Rules| CR[Combat Rules]
+            GL -->|Log Actions| LD[Logging Service]
+        end
+
+        subgraph Database Layer
+            D -->|MySQL Connector| DB[(MySQL Database)]
+            DB -->|users| UD[User Data]
+            DB -->|characters| CDB[Characters]
+            DB -->|game_sessions| GDB[Game Sessions]
+            DB -->|combat_data| CMDB[Combat Tables]
+            DB -->|logs| LDB[Game Logs]
+        end
     end
 
-    E -->|Users, Characters, Sessions, Combat Logs| D
-
-    style A1 fill:#d6f0ff
-    style A2 fill:#d6f0ff
-    style A3 fill:#d6f0ff
-    style A4 fill:#d6f0ff
-    style B fill:#b2d3c2
-    style C fill:#f9d5e5
-    style D fill:#e3eaa7
-    style E fill:#fff2cc
+    style A fill:#e6f7ff
+    style B fill:#f9d5e5,stroke:#333
+    style J fill:#e3eaa7,stroke:#333
+    style DB fill:#b2d3c2,stroke:#333
+    style F fill:#b2d3c2,stroke:#333
+    style C fill:#82b4d6,stroke:#333
 
