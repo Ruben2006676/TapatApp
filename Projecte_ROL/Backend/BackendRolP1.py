@@ -20,7 +20,7 @@ def get_db():
             host="127.0.0.1",
             user="root",
             password="",
-            database="rolplayer.bd",
+            database="rolplayer_bd",
             port=3306
         )
     except Error as e:
@@ -30,17 +30,17 @@ def get_db():
 # ---- Modelos ----
 class User:
     @staticmethod
-    def create(username, password, role='player'):
+    def create(username, password, email, role='player'):
         conn = get_db()
         if not conn:
             return None
-            
+
         cursor = conn.cursor(dictionary=True)
         try:
             hashed_pw = generate_password_hash(password)
             cursor.execute(
-                "INSERT INTO users (username, password, role) VALUES (%s, %s, %s)",
-                (username, hashed_pw, role)
+                "INSERT INTO users (username, password, email, role) VALUES (%s, %s, %s, %s)",
+                (username, hashed_pw, email, role)
             )
             conn.commit()
             return cursor.lastrowid
@@ -57,7 +57,7 @@ class User:
         conn = get_db()
         if not conn:
             return None
-            
+
         cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
@@ -75,9 +75,18 @@ class Character:
         conn = get_db()
         if not conn:
             return None
-            
+
         cursor = conn.cursor(dictionary=True)
         try:
+            # Validar que la raza y clase sean válidas
+            valid_races = ['Humano', 'Elfo', 'Enano', 'Orco', 'Mediano']
+            valid_classes = ['Guerrero', 'Mago', 'Pícaro', 'Clérigo', 'Bárbaro', 'Bardo']
+
+            if race not in valid_races:
+                return None
+            if char_class not in valid_classes:
+                return None
+
             cursor.execute("""
                 INSERT INTO characters (
                     user_id, name, race, class, level, experience,
@@ -105,11 +114,11 @@ class Character:
         conn = get_db()
         if not conn:
             return []
-            
+
         cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute("""
-                SELECT id, name, race, class, level 
+                SELECT id, name, race, class, level, experience 
                 FROM characters 
                 WHERE user_id = %s
             """, (user_id,))
@@ -126,7 +135,7 @@ class Character:
         conn = get_db()
         if not conn:
             return None
-            
+
         cursor = conn.cursor(dictionary=True)
         try:
             # Verificar que el personaje pertenece al usuario
@@ -135,21 +144,21 @@ class Character:
                 WHERE id = %s
             """, (character_id,))
             owner = cursor.fetchone()
-            
+
             if not owner or owner['user_id'] != user_id:
                 return None
-            
+
             # Obtener detalles del personaje
             cursor.execute("""
                 SELECT * FROM characters 
                 WHERE id = %s
             """, (character_id,))
             character = cursor.fetchone()
-            
+
             if not character:
                 return None
-                
-            # Obtener items, habilidades y hechizos
+
+            # Obtener items
             cursor.execute("""
                 SELECT i.*, ci.quantity, ci.is_equipped 
                 FROM character_items ci
@@ -157,7 +166,8 @@ class Character:
                 WHERE ci.character_id = %s
             """, (character_id,))
             character['items'] = cursor.fetchall()
-            
+
+            # Obtener habilidades
             cursor.execute("""
                 SELECT s.*, cs.proficiency_bonus 
                 FROM character_skills cs
@@ -165,7 +175,8 @@ class Character:
                 WHERE cs.character_id = %s
             """, (character_id,))
             character['skills'] = cursor.fetchall()
-            
+
+            # Obtener hechizos
             cursor.execute("""
                 SELECT sp.*, cs.prepared 
                 FROM character_spells cs
@@ -173,7 +184,7 @@ class Character:
                 WHERE cs.character_id = %s
             """, (character_id,))
             character['spells'] = cursor.fetchall()
-            
+
             return character
         except Error as e:
             print(f"Error al obtener detalles del personaje: {e}")
@@ -186,39 +197,53 @@ class Character:
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
-    if not data or 'username' not in data or 'password' not in data:
-        return jsonify({'error': 'Se requieren username y password'}), 400
-    
+    required_fields = ['username', 'password', 'email']
+    if not all(field in data for field in required_fields):
+        return jsonify({'error': 'Se requieren username, password y email'}), 400
+
     if User.get_by_username(data['username']):
         return jsonify({'error': 'El usuario ya existe'}), 400
-    
-    user_id = User.create(data['username'], data['password'])
+
+    user_id = User.create(
+        data['username'], 
+        data['password'],
+        data['email'],
+        data.get('role', 'player')
+    )
+
     if not user_id:
         return jsonify({'error': 'Error al crear usuario'}), 500
-        
-    return jsonify({'message': 'Usuario creado exitosamente', 'user_id': user_id}), 201
+
+    return jsonify({
+        'message': 'Usuario creado exitosamente',
+        'user_id': user_id
+    }), 201
 
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
     if not data or 'username' not in data or 'password' not in data:
         return jsonify({'error': 'Se requieren username y password'}), 400
-    
+
     user = User.get_by_username(data['username'])
-    if not user or not check_password_hash(user['password'], data['password']):
+    if not user:
         return jsonify({'error': 'Credenciales inválidas'}), 401
-    
+
+    if not (check_password_hash(user['password'], data['password']) or user['password'] == data['password']):
+        return jsonify({'error': 'Credenciales inválidas'}), 401
+
     access_token = create_access_token(identity=user['id'])
     refresh_token = create_refresh_token(identity=user['id'])
-    
+
     characters = Character.get_by_user(user['id'])
-    
+
     return jsonify({
         'access_token': access_token,
         'refresh_token': refresh_token,
         'user': {
             'id': user['id'],
             'username': user['username'],
+            'email': user['email'],
             'role': user['role'],
             'characters': characters
         }
@@ -230,14 +255,11 @@ def login():
 def create_character():
     data = request.json
     user_id = get_jwt_identity()
-    
+
     required_fields = ['name', 'race', 'class']
     if not all(field in data for field in required_fields):
         return jsonify({'error': 'Faltan campos requeridos: name, race, class'}), 400
-    
-    if not all(data[field] for field in required_fields):
-        return jsonify({'error': 'Los campos name, race y class no pueden estar vacíos'}), 400
-    
+
     character_id = Character.create(
         user_id,
         data['name'],
@@ -245,14 +267,14 @@ def create_character():
         data['class'],
         data.get('background', '')
     )
-    
+
     if not character_id:
-        return jsonify({'error': 'Error al crear personaje'}), 500
-        
+        return jsonify({'error': 'Error al crear personaje. Verifica que la raza y clase sean válidas.'}), 400
+
     character = Character.get_detail(character_id, user_id)
     if not character:
         return jsonify({'error': 'Error al obtener detalles del personaje'}), 500
-    
+
     return jsonify({
         'message': 'Personaje creado exitosamente',
         'character': character
@@ -270,10 +292,10 @@ def get_characters():
 def get_character_detail(character_id):
     user_id = get_jwt_identity()
     character = Character.get_detail(character_id, user_id)
-    
+
     if not character:
         return jsonify({'error': 'Personaje no encontrado o no tienes permisos'}), 404
-    
+
     return jsonify(character), 200
 
 if __name__ == '__main__':

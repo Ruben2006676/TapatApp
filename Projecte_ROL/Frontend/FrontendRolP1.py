@@ -9,7 +9,7 @@ from datetime import datetime
 def configure_styles():
     style = ttk.Style()
     style.theme_use('clam')
-    
+
     style.configure('.', background='#2E2E2E', foreground='white')
     style.configure('TFrame', background='#2E2E2E')
     style.configure('TLabel', background='#2E2E2E', foreground='white', font=('Arial', 10))
@@ -32,15 +32,15 @@ def configure_styles():
 
 class LocalStorage:
     storage = {}
-    
+
     @staticmethod
     def set_item(key, value):
         LocalStorage.storage[key] = value
-        
+
     @staticmethod
     def get_item(key):
         return LocalStorage.storage.get(key, None)
-        
+
     @staticmethod
     def remove_item(key):
         if key in LocalStorage.storage:
@@ -48,18 +48,18 @@ class LocalStorage:
 
 class API:
     BASE_URL = "http://localhost:5000"
-    
+
     @staticmethod
     def register(username, password):
         try:
             response = requests.post(
                 f"{API.BASE_URL}/register",
-                json={"username": username, "password": password}
+                json={"username": username, "password": password, "email": f"{username}@example.com"}  # Añadido email
             )
             return response.json(), response.status_code
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}, 500
-    
+
     @staticmethod
     def login(username, password):
         try:
@@ -70,13 +70,13 @@ class API:
             return response.json(), response.status_code
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}, 500
-    
+
     @staticmethod
     def create_character(name, race, char_class, background=""):
         token = LocalStorage.get_item('access_token')
         if not token:
             return None
-            
+
         try:
             response = requests.post(
                 f"{API.BASE_URL}/characters",
@@ -91,13 +91,13 @@ class API:
             return response.json(), response.status_code
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}, 500
-    
+
     @staticmethod
     def get_characters():
         token = LocalStorage.get_item('access_token')
         if not token:
             return None
-            
+
         try:
             response = requests.get(
                 f"{API.BASE_URL}/characters",
@@ -106,13 +106,13 @@ class API:
             return response.json(), response.status_code
         except requests.exceptions.RequestException:
             return None
-    
+
     @staticmethod
     def get_character_detail(character_id):
         token = LocalStorage.get_item('access_token')
         if not token:
             return None
-            
+
         try:
             response = requests.get(
                 f"{API.BASE_URL}/characters/{character_id}",
@@ -121,6 +121,7 @@ class API:
             return response.json(), response.status_code
         except requests.exceptions.RequestException:
             return None
+
 
 class MainApp:
     def __init__(self, root):
