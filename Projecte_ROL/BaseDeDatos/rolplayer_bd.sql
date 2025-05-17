@@ -94,8 +94,8 @@ CREATE TABLE `character_items` (
   `character_id` int(11) NOT NULL,
   `item_id` int(11) NOT NULL,
   `quantity` int(11) NOT NULL DEFAULT 1,
-  `is_equipped` tinyint(1) NOT NULL DEFAULT 0
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `is_equipped` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
