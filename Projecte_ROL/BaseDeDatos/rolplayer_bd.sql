@@ -790,7 +790,7 @@ INSERT INTO skills (id, name, description, ability) VALUES
 (3, 'Persuasión', 'Influye en otras personas.', 'charisma');
 
 -- SPELLS
-INSERT INTO spells (id, name, description, level, school, casting_time, range, components, duration) VALUES
+INSERT INTO spells (id, name, description, level, school, casting_time, `range`, components, duration) VALUES
 (1, 'Misil Mágico', 'Lanza dardos de energía mágica.', 1, 'Evocación', '1 acción', '120 pies', 'V,S', 'Instantáneo'),
 (2, 'Curar Heridas', 'Restaura puntos de golpe.', 1, 'Conjuración', '1 acción', 'Toque', 'V,S', 'Instantáneo'),
 (3, 'Escudo', 'Aumenta la clase de armadura temporalmente.', 1, 'Abjuración', '1 reacción', 'Personal', 'V,S', '1 turno');
