@@ -1,0 +1,29 @@
+flowchart TD
+
+%% Inicio y autenticación
+A[Inicio]
+A --> B{Login / Registro}
+B --> C[Pantalla de Login]
+B --> D[Formulario de Registro]
+C --> E[Menú Principal]
+D --> E
+
+%% Menú principal
+E --> F[Pestaña: Mis Personajes]
+E --> G[Pestaña: Partidas]
+E --> H[Pestaña: Combate]
+
+%% Personajes
+F --> I[Crear Personaje]
+F --> J[Detalles del Personaje]
+J --> J1[Tab: Información Básica]
+J --> J2[Tab: Atributos]
+J --> J3[Tab: Equipo]
+
+%% Partidas
+G --> K[Crear Partida]
+G --> L[Unirse a Partida]
+
+%% Combate
+H --> M[Simulador de Combate]
+M --> M1[Iniciativa]

@@ -1,0 +1,69 @@
+classDiagram
+    class FlaskApp {
+        +run()
+    }
+
+    class AuthController {
+        +register()
+        +login()
+    }
+
+    class CharacterController {
+        +create_character()
+        +get_characters()
+        +get_character_detail()
+    }
+
+    class GameController {
+        +create_game()
+        +get_my_games()
+        +get_available_games()
+        +join_game()
+    }
+
+    class User {
+        +create()
+        +get_by_username()
+        +get_by_id()
+    }
+
+    class Character {
+        +create()
+        +get_by_user()
+        +get_detail()
+    }
+
+    class Game {
+        +create()
+        +get_by_master()
+        +get_available()
+        +join()
+    }
+
+    class Database {
+        +get_db()
+    }
+
+    class JWTManager {
+        +create_access_token()
+        +create_refresh_token()
+        +jwt_required()
+        +get_jwt_identity()
+    }
+
+    FlaskApp --> AuthController
+    FlaskApp --> CharacterController
+    FlaskApp --> GameController
+
+    AuthController --> User : utiliza
+    AuthController --> JWTManager : utiliza
+
+    CharacterController --> Character : utiliza
+    CharacterController --> JWTManager : requiere autenticación
+
+    GameController --> Game : utiliza
+    GameController --> JWTManager : requiere autenticación
+
+    User --> Database : usa
+    Character --> Database : usa
+    Game --> Database : usa

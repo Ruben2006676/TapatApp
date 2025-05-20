@@ -1,0 +1,40 @@
+classDiagram
+    class LoginWindow {
+        +do_login()
+        +do_register()
+    }
+
+    class MainApp {
+        +show_main_menu()
+        +logout()
+    }
+
+    class API {
+        +login()
+        +register()
+        +create_character()
+        +get_characters()
+        +create_game()
+        +get_available_games()
+        +join_game()
+    }
+
+    class LocalStorage {
+        +set_item()
+        +get_item()
+        +remove_item()
+    }
+
+    class CreateCharacterWindow
+    class CharacterDetailWindow
+    class CreateSessionWindow
+    class JoinSessionWindow
+
+    LoginWindow --> API
+    LoginWindow --> LocalStorage
+    MainApp --> API
+    MainApp --> LocalStorage
+    MainApp --> CreateCharacterWindow
+    MainApp --> CharacterDetailWindow
+    MainApp --> CreateSessionWindow
+    MainApp --> JoinSessionWindow
