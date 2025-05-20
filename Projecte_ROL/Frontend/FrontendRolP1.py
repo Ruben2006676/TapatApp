@@ -50,11 +50,11 @@ class API:
     BASE_URL = "http://localhost:5000"
 
     @staticmethod
-    def register(username, password):
+    def register(username, password, email):
         try:
             response = requests.post(
                 f"{API.BASE_URL}/register",
-                json={"username": username, "password": password, "email": f"{username}@example.com"}  # Añadido email
+                json={"username": username, "password": password, "email": email}
             )
             return response.json(), response.status_code
         except requests.exceptions.RequestException as e:
@@ -75,7 +75,7 @@ class API:
     def create_character(name, race, char_class, background=""):
         token = LocalStorage.get_item('access_token')
         if not token:
-            return None
+            return {"error": "No hay token de acceso"}, 401
 
         try:
             response = requests.post(
@@ -96,7 +96,7 @@ class API:
     def get_characters():
         token = LocalStorage.get_item('access_token')
         if not token:
-            return None
+            return {"error": "No hay token de acceso"}, 401
 
         try:
             response = requests.get(
@@ -104,14 +104,14 @@ class API:
                 headers={"Authorization": f"Bearer {token}"}
             )
             return response.json(), response.status_code
-        except requests.exceptions.RequestException:
-            return None
+        except requests.exceptions.RequestException as e:
+            return {"error": str(e)}, 500
 
     @staticmethod
     def get_character_detail(character_id):
         token = LocalStorage.get_item('access_token')
         if not token:
-            return None
+            return {"error": "No hay token de acceso"}, 401
 
         try:
             response = requests.get(
@@ -119,9 +119,58 @@ class API:
                 headers={"Authorization": f"Bearer {token}"}
             )
             return response.json(), response.status_code
-        except requests.exceptions.RequestException:
-            return None
+        except requests.exceptions.RequestException as e:
+            return {"error": str(e)}, 500
 
+    @staticmethod
+    def create_game(name, description=""):
+        token = LocalStorage.get_item('access_token')
+        if not token:
+            return {"error": "No hay token de acceso"}, 401
+
+        try:
+            response = requests.post(
+                f"{API.BASE_URL}/games",
+                json={
+                    "name": name,
+                    "description": description
+                },
+                headers={"Authorization": f"Bearer {token}"}
+            )
+            return response.json(), response.status_code
+        except requests.exceptions.RequestException as e:
+            return {"error": str(e)}, 500
+
+    @staticmethod
+    def get_available_games():
+        token = LocalStorage.get_item('access_token')
+        if not token:
+            return {"error": "No hay token de acceso"}, 401
+
+        try:
+            response = requests.get(
+                f"{API.BASE_URL}/games/available",
+                headers={"Authorization": f"Bearer {token}"}
+            )
+            return response.json(), response.status_code
+        except requests.exceptions.RequestException as e:
+            return {"error": str(e)}, 500
+
+    @staticmethod
+    def join_game(game_id, character_id):
+        token = LocalStorage.get_item('access_token')
+        if not token:
+            return {"error": "No hay token de acceso"}, 401
+
+        try:
+            response = requests.post(
+                f"{API.BASE_URL}/games/{game_id}/join",
+                json={"character_id": character_id},
+                headers={"Authorization": f"Bearer {token}"}
+            )
+            return response.json(), response.status_code
+        except requests.exceptions.RequestException as e:
+            return {"error": str(e)}, 500
 
 class MainApp:
     def __init__(self, root):
@@ -207,29 +256,27 @@ class MainApp:
                   command=self.show_create_character).pack(side=tk.LEFT, padx=5)
         
         ttk.Button(action_frame, text="Actualizar Lista", 
-                  command=lambda: self.load_characters_list(characters_list)).pack(side=tk.LEFT, padx=5)
+                  command=lambda: self.load_characters_list(self.characters_tree)).pack(side=tk.LEFT, padx=5)
         
-        list_frame = ttk.Frame(tab)
-        list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+        # Treeview para personajes
         columns = ("ID", "Nombre", "Raza", "Clase", "Nivel")
-        characters_list = ttk.Treeview(list_frame, columns=columns, show="headings", height=15)
+        self.characters_tree = ttk.Treeview(tab, columns=columns, show="headings", height=15)
         
         for col in columns:
-            characters_list.heading(col, text=col)
-            characters_list.column(col, width=100, anchor=tk.CENTER)
+            self.characters_tree.heading(col, text=col)
+            self.characters_tree.column(col, width=100, anchor=tk.CENTER)
         
-        characters_list.column("Nombre", width=150)
+        self.characters_tree.column("Nombre", width=150)
         
-        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=characters_list.yview)
-        characters_list.configure(yscroll=scrollbar.set)
+        scrollbar = ttk.Scrollbar(tab, orient=tk.VERTICAL, command=self.characters_tree.yview)
+        self.characters_tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        characters_list.pack(fill=tk.BOTH, expand=True)
+        self.characters_tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        ttk.Button(list_frame, text="Ver Detalles", 
-                  command=lambda: self.show_character_detail(characters_list)).pack(pady=10)
+        ttk.Button(tab, text="Ver Detalles", 
+                  command=lambda: self.show_character_detail(self.characters_tree)).pack(pady=10)
         
-        self.load_characters_list(characters_list)
+        self.load_characters_list(self.characters_tree)
     
     def load_characters_list(self, treeview):
         for item in treeview.get_children():
@@ -247,7 +294,8 @@ class MainApp:
                     char['level']
                 ))
         else:
-            messagebox.showerror("Error", "No se pudieron cargar los personajes")
+            error_msg = response.get('error', 'Error desconocido')
+            messagebox.showerror("Error", f"No se pudieron cargar los personajes: {error_msg}")
     
     def show_character_detail(self, treeview):
         selected_item = treeview.focus()
@@ -259,63 +307,75 @@ class MainApp:
         response, status = API.get_character_detail(character_id)
         
         if status != 200:
-            messagebox.showerror("Error", "No se pudo obtener la información del personaje")
+            error_msg = response.get('error', 'Error desconocido')
+            messagebox.showerror("Error", f"No se pudo obtener el personaje: {error_msg}")
             return
         
         character = response
         
         detail_window = tk.Toplevel(self.root)
-        detail_window.title(f"Detalles del Personaje: {character['name']}")
-        detail_window.geometry("800x600")
+        detail_window.title(f"Detalles: {character['name']} (Nvl {character['level']})")
+        detail_window.geometry("900x700")
         
         notebook = ttk.Notebook(detail_window)
-        notebook.pack(fill=tk.BOTH, expand=True)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # Pestaña de Información General
-        general_tab = ttk.Frame(notebook)
-        notebook.add(general_tab, text="Información General")
+        # Pestaña de Información Básica
+        basic_tab = ttk.Frame(notebook)
+        notebook.add(basic_tab, text="Información Básica")
+        self.setup_basic_tab(basic_tab, character)
         
-        main_frame = ttk.Frame(general_tab)
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        # Pestaña de Atributos
+        stats_tab = ttk.Frame(notebook)
+        notebook.add(stats_tab, text="Atributos")
+        self.setup_stats_tab(stats_tab, character)
         
-        canvas = tk.Canvas(main_frame)
-        scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
+        # Pestaña de Equipo (si existe)
+        if character.get('items'):
+            items_tab = ttk.Frame(notebook)
+            notebook.add(items_tab, text=f"Equipo ({len(character['items'])})")
+            self.setup_items_tab(items_tab, character['items'])
+    
+    def setup_basic_tab(self, tab, character):
+        # Frame con scroll
+        canvas = tk.Canvas(tab)
+        scrollbar = ttk.Scrollbar(tab, orient=tk.VERTICAL, command=canvas.yview)
+        scroll_frame = ttk.Frame(canvas)
         
-        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
         
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        ttk.Label(scrollable_frame, text=f"Nombre: {character['name']}", 
-                 font=('Arial', 14, 'bold')).pack(pady=10, anchor=tk.W)
+        # Contenido
+        ttk.Label(scroll_frame, text=f"Nombre: {character['name']}", font=('Arial', 14, 'bold')).pack(anchor=tk.W, pady=5)
         
+        # Imagen de la raza (si existe)
         try:
-            race_img = Image.open(f"races/{character['race'].lower()}.png")
+            race_img = Image.open(f"assets/races/{character['race'].lower()}.png")
             race_img = race_img.resize((150, 150), Image.LANCZOS)
             race_photo = ImageTk.PhotoImage(race_img)
-            race_label = ttk.Label(scrollable_frame, image=race_photo)
+            race_label = ttk.Label(scroll_frame, image=race_photo)
             race_label.image = race_photo
             race_label.pack(pady=10)
-        except:
-            pass
+        except Exception as e:
+            print(f"No se pudo cargar imagen de raza: {e}")
         
-        info_frame = ttk.Frame(scrollable_frame)
+        # Info básica en 2 columnas
+        info_frame = ttk.Frame(scroll_frame)
         info_frame.pack(fill=tk.X, padx=10, pady=5)
         
-        ttk.Label(info_frame, text=f"Raza: {character['race']}", width=20).pack(side=tk.LEFT)
-        ttk.Label(info_frame, text=f"Clase: {character['class']}").pack(side=tk.LEFT)
+        ttk.Label(info_frame, text=f"Raza: {character['race']}", width=20).grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(info_frame, text=f"Clase: {character['class']}").grid(row=0, column=1, sticky=tk.W)
         
-        info_frame2 = ttk.Frame(scrollable_frame)
-        info_frame2.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(info_frame, text=f"Nivel: {character['level']}", width=20).grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(info_frame, text=f"Experiencia: {character['experience']}").grid(row=1, column=1, sticky=tk.W)
         
-        ttk.Label(info_frame2, text=f"Nivel: {character['level']}", width=20).pack(side=tk.LEFT)
-        ttk.Label(info_frame2, text=f"Experiencia: {character['experience']}").pack(side=tk.LEFT)
-        
-        health_frame = ttk.Frame(scrollable_frame)
+        # Barra de salud
+        health_frame = ttk.Frame(scroll_frame)
         health_frame.pack(fill=tk.X, padx=10, pady=10)
         
         ttk.Label(health_frame, text="Salud:").pack(side=tk.LEFT)
@@ -325,34 +385,79 @@ class MainApp:
         
         health_canvas = tk.Canvas(health_frame, width=200, height=20, bg='#2E2E2E', highlightthickness=0)
         health_canvas.create_rectangle(0, 0, health_percent * 2, 20, fill=health_color, outline='')
-        health_canvas.create_text(100, 10, text=f"{character['hit_points']}/{character['max_hit_points']}", 
+        health_canvas.create_text(100, 10, 
+                                text=f"{character['hit_points']}/{character['max_hit_points']}", 
                                 fill='white', font=('Arial', 10))
         health_canvas.pack(side=tk.LEFT, padx=5)
         
-        gold_frame = ttk.Frame(scrollable_frame)
-        gold_frame.pack(fill=tk.X, padx=10, pady=5)
+        # Historia de fondo
+        ttk.Label(scroll_frame, text="Historia:", font=('Arial', 12)).pack(anchor=tk.W, pady=5)
         
-        ttk.Label(gold_frame, text="Oro:").pack(side=tk.LEFT)
-        ttk.Label(gold_frame, text=f"{character['gold']} monedas", style="Success.TLabel").pack(side=tk.LEFT)
-        
-        background_frame = ttk.Frame(scrollable_frame)
-        background_frame.pack(fill=tk.BOTH, padx=10, pady=10)
-        
-        ttk.Label(background_frame, text="Historia del Personaje:", style="Header.TLabel").pack(anchor=tk.W)
-        
-        background_text = scrolledtext.ScrolledText(
-            background_frame, 
-            wrap=tk.WORD, 
-            width=60, 
-            height=10,
+        bg_text = scrolledtext.ScrolledText(
+            scroll_frame,
+            wrap=tk.WORD,
+            width=80,
+            height=8,
+            font=('Arial', 10),
             bg='#4A4A4A',
-            fg='white',
-            insertbackground='white',
-            font=('Arial', 10)
+            fg='white'
         )
-        background_text.insert(tk.END, character['background'] or "Este personaje no tiene una historia definida.")
-        background_text.config(state=tk.DISABLED)
-        background_text.pack(fill=tk.BOTH, expand=True)
+        bg_text.insert(tk.END, character.get('background', 'No hay historia de fondo disponible.'))
+        bg_text.config(state=tk.DISABLED)
+        bg_text.pack(fill=tk.BOTH, padx=10, pady=5)
+    
+    def setup_stats_tab(self, tab, character):
+        # Frame principal
+        main_frame = ttk.Frame(tab)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Atributos principales
+        stats = [
+            ('Fuerza', 'strength'),
+            ('Destreza', 'dexterity'),
+            ('Constitución', 'constitution'),
+            ('Inteligencia', 'intelligence'),
+            ('Sabiduría', 'wisdom'),
+            ('Carisma', 'charisma')
+        ]
+        
+        for i, (name, key) in enumerate(stats):
+            frame = ttk.Frame(main_frame)
+            frame.grid(row=i//3, column=i%3, padx=15, pady=10, sticky=tk.NSEW)
+            
+            ttk.Label(frame, text=name, font=('Arial', 11, 'bold')).pack()
+            ttk.Label(frame, text=str(character[key]), 
+                     font=('Arial', 14), 
+                     foreground='#FFD700').pack()
+    
+    def setup_items_tab(self, tab, items):
+        # Frame con scroll
+        canvas = tk.Canvas(tab)
+        scrollbar = ttk.Scrollbar(tab, orient=tk.VERTICAL, command=canvas.yview)
+        scroll_frame = ttk.Frame(canvas)
+        
+        scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Mostrar items
+        for i, item in enumerate(items):
+            item_frame = ttk.Frame(scroll_frame, borderwidth=1, relief='solid')
+            item_frame.pack(fill=tk.X, padx=5, pady=3)
+            
+            ttk.Label(item_frame, text=f"{item['name']} (x{item['quantity']})", 
+                     font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky=tk.W)
+            
+            if item.get('is_equipped', False):
+                ttk.Label(item_frame, text="[EQUIPADO]", 
+                         foreground='green').grid(row=0, column=1, padx=5)
+            
+            ttk.Label(item_frame, text=item.get('description', 'Sin descripción'), 
+                     wraplength=400).grid(row=1, column=0, columnspan=2, sticky=tk.W)
     
     def show_create_character(self):
         form_window = tk.Toplevel(self.root)
@@ -419,7 +524,7 @@ class MainApp:
         if status == 201:
             messagebox.showinfo("Éxito", "Personaje creado exitosamente")
             window.destroy()
-            self.show_main_menu()
+            self.load_characters_list(self.characters_tree)
         else:
             error_msg = response.get('error', 'Error desconocido al crear personaje')
             messagebox.showerror("Error", error_msg)
@@ -434,7 +539,131 @@ class MainApp:
         ttk.Button(action_frame, text="Unirse a Partida", 
                   command=self.show_join_session).pack(side=tk.LEFT, padx=5)
         
-        ttk.Label(tab, text="Funcionalidad de partidas en desarrollo...").pack(pady=50)
+        ttk.Button(action_frame, text="Actualizar Lista", 
+                  command=self.load_games_list).pack(side=tk.LEFT, padx=5)
+        
+        # Lista de partidas
+        self.games_tree = ttk.Treeview(tab, columns=("ID", "Nombre", "Master", "Descripción"), show="headings")
+        self.games_tree.heading("ID", text="ID")
+        self.games_tree.heading("Nombre", text="Nombre")
+        self.games_tree.heading("Master", text="Master")
+        self.games_tree.heading("Descripción", text="Descripción")
+        self.games_tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        self.load_games_list()
+    
+    def load_games_list(self):
+        for item in self.games_tree.get_children():
+            self.games_tree.delete(item)
+        
+        # Cargar partidas disponibles
+        response, status = API.get_available_games()
+        if status == 200:
+            for game in response.get('games', []):
+                self.games_tree.insert("", tk.END, values=(
+                    game['id'],
+                    game['name'],
+                    game.get('master_name', ''),
+                    game.get('description', '')[:50] + '...' if game.get('description') else ''
+                ))
+        else:
+            error_msg = response.get('error', 'Error desconocido')
+            messagebox.showerror("Error", f"No se pudieron cargar las partidas: {error_msg}")
+    
+    def show_create_session(self):
+        form_window = tk.Toplevel(self.root)
+        form_window.title("Crear Partida")
+        form_window.geometry("400x300")
+        
+        ttk.Label(form_window, text="Crear Nueva Partida", style="Title.TLabel").pack(pady=10)
+        
+        form_frame = ttk.Frame(form_window)
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        
+        ttk.Label(form_frame, text="Nombre:").pack(pady=5)
+        name_entry = ttk.Entry(form_frame)
+        name_entry.pack(pady=5, fill=tk.X)
+        
+        ttk.Label(form_frame, text="Descripción:").pack(pady=5)
+        desc_text = scrolledtext.ScrolledText(form_frame, height=5, wrap=tk.WORD)
+        desc_text.pack(pady=5, fill=tk.BOTH, expand=True)
+        
+        ttk.Button(form_frame, text="Crear Partida", 
+                  command=lambda: self.create_session(
+                      name_entry.get(),
+                      desc_text.get("1.0", tk.END),
+                      form_window
+                  )).pack(pady=10)
+    
+    def create_session(self, name, description, window):
+        if not name:
+            messagebox.showwarning("Error", "El nombre es obligatorio")
+            return
+        
+        response, status = API.create_game(name, description.strip())
+        
+        if status == 201:
+            messagebox.showinfo("Éxito", "Partida creada exitosamente")
+            window.destroy()
+            self.load_games_list()
+        else:
+            error_msg = response.get('error', 'Error desconocido al crear partida')
+            messagebox.showerror("Error", error_msg)
+    
+    def show_join_session(self):
+        selected_item = self.games_tree.focus()
+        if not selected_item:
+            messagebox.showwarning("Advertencia", "Selecciona una partida primero")
+            return
+        
+        game_id = self.games_tree.item(selected_item)['values'][0]
+        
+        # Obtener personajes del usuario
+        response, status = API.get_characters()
+        if status != 200:
+            error_msg = response.get('error', 'Error desconocido')
+            messagebox.showerror("Error", f"No se pudieron cargar los personajes: {error_msg}")
+            return
+        
+        characters = response.get('characters', [])
+        if not characters:
+            messagebox.showwarning("Advertencia", "No tienes personajes creados")
+            return
+        
+        form_window = tk.Toplevel(self.root)
+        form_window.title("Unirse a Partida")
+        form_window.geometry("300x200")
+        
+        ttk.Label(form_window, text=f"Unirse a Partida #{game_id}", style="Title.TLabel").pack(pady=10)
+        
+        form_frame = ttk.Frame(form_window)
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        
+        ttk.Label(form_frame, text="Selecciona un personaje:").pack(pady=5)
+        
+        char_combobox = ttk.Combobox(form_frame, values=[f"{c['id']} - {c['name']}" for c in characters])
+        char_combobox.pack(pady=5, fill=tk.X)
+        
+        ttk.Button(form_frame, text="Unirse", 
+                  command=lambda: self.join_session(
+                      game_id,
+                      char_combobox.get().split(" - ")[0],  # Obtener el ID del personaje
+                      form_window
+                  )).pack(pady=10)
+    
+    def join_session(self, game_id, character_id, window):
+        if not character_id.isdigit():
+            messagebox.showwarning("Error", "Selecciona un personaje válido")
+            return
+        
+        response, status = API.join_game(game_id, int(character_id))
+        
+        if status == 200:
+            messagebox.showinfo("Éxito", "Te has unido a la partida exitosamente")
+            window.destroy()
+        else:
+            error_msg = response.get('error', 'Error desconocido al unirse a la partida')
+            messagebox.showerror("Error", error_msg)
     
     def setup_combat_tab(self, tab):
         action_frame = ttk.Frame(tab)
@@ -480,67 +709,6 @@ class MainApp:
             
             if i == 0:
                 canvas.create_rectangle(810, y-15, 940, y+15, outline='#FFD700', width=2)
-    
-    def show_create_session(self):
-        form_window = tk.Toplevel(self.root)
-        form_window.title("Crear Partida")
-        form_window.geometry("400x200")
-        
-        ttk.Label(form_window, text="Crear Nueva Partida", style="Title.TLabel").pack(pady=10)
-        
-        form_frame = ttk.Frame(form_window)
-        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
-        ttk.Label(form_frame, text="ID de Aventura:").pack(pady=5)
-        adventure_entry = ttk.Entry(form_frame)
-        adventure_entry.pack(pady=5, fill=tk.X)
-        
-        ttk.Button(form_frame, text="Crear Partida", 
-                  command=lambda: self.create_session(
-                      adventure_entry.get(),
-                      form_window
-                  )).pack(pady=10)
-    
-    def create_session(self, adventure_id, window):
-        if not adventure_id.isdigit():
-            messagebox.showwarning("Error", "El ID de aventura debe ser numérico")
-            return
-        
-        messagebox.showinfo("Info", "Funcionalidad en desarrollo")
-        window.destroy()
-    
-    def show_join_session(self):
-        form_window = tk.Toplevel(self.root)
-        form_window.title("Unirse a Partida")
-        form_window.geometry("400x250")
-        
-        ttk.Label(form_window, text="Unirse a Partida", style="Title.TLabel").pack(pady=10)
-        
-        form_frame = ttk.Frame(form_window)
-        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
-        ttk.Label(form_frame, text="ID de Partida:").pack(pady=5)
-        session_entry = ttk.Entry(form_frame)
-        session_entry.pack(pady=5, fill=tk.X)
-        
-        ttk.Label(form_frame, text="ID de Personaje:").pack(pady=5)
-        char_entry = ttk.Entry(form_frame)
-        char_entry.pack(pady=5, fill=tk.X)
-        
-        ttk.Button(form_frame, text="Unirse a Partida", 
-                  command=lambda: self.join_session(
-                      session_entry.get(),
-                      char_entry.get(),
-                      form_window
-                  )).pack(pady=10)
-    
-    def join_session(self, session_id, char_id, window):
-        if not all([session_id.isdigit(), char_id.isdigit()]):
-            messagebox.showwarning("Error", "Los IDs deben ser numéricos")
-            return
-        
-        messagebox.showinfo("Info", "Funcionalidad en desarrollo")
-        window.destroy()
     
     def show_start_combat(self):
         form_window = tk.Toplevel(self.root)
@@ -631,6 +799,10 @@ class LoginWindow:
         self.register_user_entry = ttk.Entry(form_frame)
         self.register_user_entry.pack(pady=5, fill=tk.X)
         
+        ttk.Label(form_frame, text="Email:").pack(pady=5)
+        self.register_email_entry = ttk.Entry(form_frame)
+        self.register_email_entry.pack(pady=5, fill=tk.X)
+        
         ttk.Label(form_frame, text="Contraseña:").pack(pady=5)
         self.register_pass_entry = ttk.Entry(form_frame, show="*")
         self.register_pass_entry.pack(pady=5, fill=tk.X)
@@ -665,22 +837,25 @@ class LoginWindow:
     
     def do_register(self):
         user = self.register_user_entry.get()
+        email = self.register_email_entry.get()
         password = self.register_pass_entry.get()
         confirm_password = self.register_confirm_pass_entry.get()
         
-        if not user or not password:
-            messagebox.showwarning("Error", "Usuario y contraseña requeridos")
+        if not all([user, email, password]):
+            messagebox.showwarning("Error", "Todos los campos son requeridos")
             return
             
         if password != confirm_password:
             messagebox.showwarning("Error", "Las contraseñas no coinciden")
             return
         
-        response, status = API.register(user, password)
+        response, status = API.register(user, password, email)
         
         if status == 201:
             messagebox.showinfo("Éxito", "Usuario registrado exitosamente")
+            # Limpiar campos
             self.register_user_entry.delete(0, tk.END)
+            self.register_email_entry.delete(0, tk.END)
             self.register_pass_entry.delete(0, tk.END)
             self.register_confirm_pass_entry.delete(0, tk.END)
         else:

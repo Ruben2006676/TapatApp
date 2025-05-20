@@ -69,23 +69,39 @@ class User:
             cursor.close()
             conn.close()
 
-class Character:
     @staticmethod
-    def create(user_id, name, race, char_class, background=""):
+    def get_by_id(user_id):
         conn = get_db()
         if not conn:
             return None
 
         cursor = conn.cursor(dictionary=True)
         try:
-            # Validar que la raza y clase sean válidas
+            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+            return cursor.fetchone()
+        except Error as e:
+            print(f"Error al obtener usuario: {e}")
+            return None
+        finally:
+            cursor.close()
+            conn.close()
+
+class Character:
+    @staticmethod
+    def create(user_id, name, race, char_class, background=""):
+        conn = get_db()
+        if not conn:
+            return {"error": "No se pudo conectar a la base de datos"}
+
+        cursor = conn.cursor(dictionary=True)
+        try:
             valid_races = ['Humano', 'Elfo', 'Enano', 'Orco', 'Mediano']
             valid_classes = ['Guerrero', 'Mago', 'Pícaro', 'Clérigo', 'Bárbaro', 'Bardo']
 
             if race not in valid_races:
-                return None
+                return {"error": f"Raza inválida. Opciones válidas: {', '.join(valid_races)}"}
             if char_class not in valid_classes:
-                return None
+                return {"error": f"Clase inválida. Opciones válidas: {', '.join(valid_classes)}"}
 
             cursor.execute("""
                 INSERT INTO characters (
@@ -104,7 +120,7 @@ class Character:
         except Error as e:
             conn.rollback()
             print(f"Error al crear personaje: {e}")
-            return None
+            return {"error": f"Error de base de datos: {str(e)}"}
         finally:
             cursor.close()
             conn.close()
@@ -113,7 +129,7 @@ class Character:
     def get_by_user(user_id):
         conn = get_db()
         if not conn:
-            return []
+            return {"error": "No se pudo conectar a la base de datos"}
 
         cursor = conn.cursor(dictionary=True)
         try:
@@ -122,10 +138,11 @@ class Character:
                 FROM characters 
                 WHERE user_id = %s
             """, (user_id,))
-            return cursor.fetchall()
+            result = cursor.fetchall()
+            return {"characters": result} if result else {"characters": []}
         except Error as e:
             print(f"Error al obtener personajes: {e}")
-            return []
+            return {"error": str(e)}
         finally:
             cursor.close()
             conn.close()
@@ -139,26 +156,20 @@ class Character:
         cursor = conn.cursor(dictionary=True)
         try:
             # Verificar que el personaje pertenece al usuario
-            cursor.execute("""
-                SELECT user_id FROM characters 
-                WHERE id = %s
-            """, (character_id,))
+            cursor.execute("SELECT user_id FROM characters WHERE id = %s", (character_id,))
             owner = cursor.fetchone()
-
+            
             if not owner or owner['user_id'] != user_id:
                 return None
 
-            # Obtener detalles del personaje
-            cursor.execute("""
-                SELECT * FROM characters 
-                WHERE id = %s
-            """, (character_id,))
+            # Obtener detalles básicos del personaje
+            cursor.execute("SELECT * FROM characters WHERE id = %s", (character_id,))
             character = cursor.fetchone()
 
             if not character:
                 return None
 
-            # Obtener items
+            # Obtener items del personaje
             cursor.execute("""
                 SELECT i.*, ci.quantity, ci.is_equipped 
                 FROM character_items ci
@@ -167,7 +178,7 @@ class Character:
             """, (character_id,))
             character['items'] = cursor.fetchall()
 
-            # Obtener habilidades
+            # Obtener habilidades del personaje
             cursor.execute("""
                 SELECT s.*, cs.proficiency_bonus 
                 FROM character_skills cs
@@ -176,7 +187,7 @@ class Character:
             """, (character_id,))
             character['skills'] = cursor.fetchall()
 
-            # Obtener hechizos
+            # Obtener hechizos del personaje
             cursor.execute("""
                 SELECT sp.*, cs.prepared 
                 FROM character_spells cs
@@ -189,6 +200,110 @@ class Character:
         except Error as e:
             print(f"Error al obtener detalles del personaje: {e}")
             return None
+        finally:
+            cursor.close()
+            conn.close()
+
+class Game:
+    @staticmethod
+    def create(master_id, name, description=""):
+        conn = get_db()
+        if not conn:
+            return None
+
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                "INSERT INTO games (master_id, name, description) VALUES (%s, %s, %s)",
+                (master_id, name, description)
+            )
+            conn.commit()
+            return cursor.lastrowid
+        except Error as e:
+            conn.rollback()
+            print(f"Error al crear partida: {e}")
+            return None
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def get_by_master(master_id):
+        conn = get_db()
+        if not conn:
+            return []
+
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT id, name, description, created_at 
+                FROM games 
+                WHERE master_id = %s
+            """, (master_id,))
+            return cursor.fetchall()
+        except Error as e:
+            print(f"Error al obtener partidas: {e}")
+            return []
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def get_available():
+        conn = get_db()
+        if not conn:
+            return []
+
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT g.id, g.name, g.description, g.created_at, 
+                       u.username as master_name 
+                FROM games g
+                JOIN users u ON g.master_id = u.id
+                WHERE g.status = 'open'
+            """)
+            return cursor.fetchall()
+        except Error as e:
+            print(f"Error al obtener partidas disponibles: {e}")
+            return []
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def join(game_id, user_id, character_id):
+        conn = get_db()
+        if not conn:
+            return False
+
+        cursor = conn.cursor(dictionary=True)
+        try:
+            # Verificar que el personaje pertenece al usuario
+            cursor.execute("SELECT user_id FROM characters WHERE id = %s", (character_id,))
+            character = cursor.fetchone()
+            
+            if not character or character['user_id'] != user_id:
+                return False
+
+            # Verificar que la partida existe y está abierta
+            cursor.execute("SELECT status FROM games WHERE id = %s", (game_id,))
+            game = cursor.fetchone()
+            
+            if not game or game['status'] != 'open':
+                return False
+
+            # Unir al jugador a la partida
+            cursor.execute("""
+                INSERT INTO game_players (game_id, user_id, character_id)
+                VALUES (%s, %s, %s)
+            """, (game_id, user_id, character_id))
+            conn.commit()
+            return True
+        except Error as e:
+            conn.rollback()
+            print(f"Error al unirse a partida: {e}")
+            return False
         finally:
             cursor.close()
             conn.close()
@@ -236,6 +351,8 @@ def login():
     refresh_token = create_refresh_token(identity=user['id'])
 
     characters = Character.get_by_user(user['id'])
+    if 'error' in characters:
+        return jsonify({'error': characters['error']}), 500
 
     return jsonify({
         'access_token': access_token,
@@ -245,7 +362,7 @@ def login():
             'username': user['username'],
             'email': user['email'],
             'role': user['role'],
-            'characters': characters
+            'characters': characters['characters']
         }
     }), 200
 
@@ -260,7 +377,7 @@ def create_character():
     if not all(field in data for field in required_fields):
         return jsonify({'error': 'Faltan campos requeridos: name, race, class'}), 400
 
-    character_id = Character.create(
+    result = Character.create(
         user_id,
         data['name'],
         data['race'],
@@ -268,10 +385,12 @@ def create_character():
         data.get('background', '')
     )
 
-    if not character_id:
-        return jsonify({'error': 'Error al crear personaje. Verifica que la raza y clase sean válidas.'}), 400
+    if isinstance(result, dict) and 'error' in result:
+        return jsonify({'error': result['error']}), 400
+    elif not result:
+        return jsonify({'error': 'Error desconocido al crear personaje'}), 500
 
-    character = Character.get_detail(character_id, user_id)
+    character = Character.get_detail(result, user_id)
     if not character:
         return jsonify({'error': 'Error al obtener detalles del personaje'}), 500
 
@@ -284,19 +403,76 @@ def create_character():
 @jwt_required()
 def get_characters():
     user_id = get_jwt_identity()
-    characters = Character.get_by_user(user_id)
-    return jsonify({'characters': characters}), 200
+    result = Character.get_by_user(user_id)
+    
+    if isinstance(result, dict) and 'error' in result:
+        return jsonify({'error': result['error']}), 500
+    
+    return jsonify(result), 200
 
 @app.route('/characters/<int:character_id>', methods=['GET'])
 @jwt_required()
 def get_character_detail(character_id):
     user_id = get_jwt_identity()
     character = Character.get_detail(character_id, user_id)
-
+    
     if not character:
         return jsonify({'error': 'Personaje no encontrado o no tienes permisos'}), 404
-
+    
     return jsonify(character), 200
+
+# ---- Gestión de Partidas ----
+@app.route('/games', methods=['POST'])
+@jwt_required()
+def create_game():
+    data = request.json
+    user_id = get_jwt_identity()
+
+    if not data or 'name' not in data:
+        return jsonify({'error': 'Se requiere el nombre de la partida'}), 400
+
+    game_id = Game.create(
+        user_id,
+        data['name'],
+        data.get('description', '')
+    )
+
+    if not game_id:
+        return jsonify({'error': 'Error al crear partida'}), 500
+
+    return jsonify({
+        'message': 'Partida creada exitosamente',
+        'game_id': game_id
+    }), 201
+
+@app.route('/games/mine', methods=['GET'])
+@jwt_required()
+def get_my_games():
+    user_id = get_jwt_identity()
+    games = Game.get_by_master(user_id)
+    return jsonify({'games': games}), 200
+
+@app.route('/games/available', methods=['GET'])
+@jwt_required()
+def get_available_games():
+    games = Game.get_available()
+    return jsonify({'games': games}), 200
+
+@app.route('/games/<int:game_id>/join', methods=['POST'])
+@jwt_required()
+def join_game(game_id):
+    user_id = get_jwt_identity()
+    data = request.json
+    
+    if not data or 'character_id' not in data:
+        return jsonify({'error': 'Se requiere el ID del personaje'}), 400
+
+    success = Game.join(game_id, user_id, data['character_id'])
+    
+    if not success:
+        return jsonify({'error': 'No se pudo unir a la partida. Verifica que el personaje te pertenezca y que la partida esté abierta.'}), 400
+
+    return jsonify({'message': 'Te has unido a la partida exitosamente'}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
