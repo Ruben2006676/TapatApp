@@ -176,5 +176,25 @@ El frontend está desarrollado en Tkinter y utiliza una arquitectura basada en D
   - Uso de clases DAO (Data Access Object) para separar la lógica de negocio de la interfaz gráfica.
   - Almacenamiento local en memoria para tokens y datos del usuario.
 
+## Diagrames del Backend, Frontend i d'Arquitectura
+
+[Diagrama Backend](./Projecte_ROL/Backend/DiagramaBackend.mermaid)
+
+[Diagrama Frontend](./Projecte_ROL/Frontend/DiagramaFrontend.mermaid)
+
+[Diagrama Arquitectura Backend/Frontend](./Projecte_ROL/Backend/DiagramaArquitecturaBackendFrontend.mermaid)
+
+[Diagrama Seqüència Login](./Projecte_ROL/Backend/DiagramaArquitecturaBackendFrontend.mermaid)
+
+[Wireframes](./Projecte_ROL/Wireframes.mermaid)
+
+
+
+
+
+
+
+
+
 
 
