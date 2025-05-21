@@ -69,23 +69,6 @@ class User:
             cursor.close()
             conn.close()
 
-    @staticmethod
-    def get_by_id(user_id):
-        conn = get_db()
-        if not conn:
-            return None
-
-        cursor = conn.cursor(dictionary=True)
-        try:
-            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
-            return cursor.fetchone()
-        except Error as e:
-            print(f"Error al obtener usuario: {e}")
-            return None
-        finally:
-            cursor.close()
-            conn.close()
-
 class Character:
     @staticmethod
     def create(user_id, name, race, char_class, background=""):
@@ -155,21 +138,18 @@ class Character:
 
         cursor = conn.cursor(dictionary=True)
         try:
-            # Verificar que el personaje pertenece al usuario
             cursor.execute("SELECT user_id FROM characters WHERE id = %s", (character_id,))
             owner = cursor.fetchone()
             
             if not owner or owner['user_id'] != user_id:
                 return None
 
-            # Obtener detalles básicos del personaje
             cursor.execute("SELECT * FROM characters WHERE id = %s", (character_id,))
             character = cursor.fetchone()
 
             if not character:
                 return None
 
-            # Obtener items del personaje
             cursor.execute("""
                 SELECT i.*, ci.quantity, ci.is_equipped 
                 FROM character_items ci
@@ -178,7 +158,6 @@ class Character:
             """, (character_id,))
             character['items'] = cursor.fetchall()
 
-            # Obtener habilidades del personaje
             cursor.execute("""
                 SELECT s.*, cs.proficiency_bonus 
                 FROM character_skills cs
@@ -187,7 +166,6 @@ class Character:
             """, (character_id,))
             character['skills'] = cursor.fetchall()
 
-            # Obtener hechizos del personaje
             cursor.execute("""
                 SELECT sp.*, cs.prepared 
                 FROM character_spells cs
@@ -200,110 +178,6 @@ class Character:
         except Error as e:
             print(f"Error al obtener detalles del personaje: {e}")
             return None
-        finally:
-            cursor.close()
-            conn.close()
-
-class Game:
-    @staticmethod
-    def create(master_id, name, description=""):
-        conn = get_db()
-        if not conn:
-            return None
-
-        cursor = conn.cursor(dictionary=True)
-        try:
-            cursor.execute(
-                "INSERT INTO games (master_id, name, description) VALUES (%s, %s, %s)",
-                (master_id, name, description)
-            )
-            conn.commit()
-            return cursor.lastrowid
-        except Error as e:
-            conn.rollback()
-            print(f"Error al crear partida: {e}")
-            return None
-        finally:
-            cursor.close()
-            conn.close()
-
-    @staticmethod
-    def get_by_master(master_id):
-        conn = get_db()
-        if not conn:
-            return []
-
-        cursor = conn.cursor(dictionary=True)
-        try:
-            cursor.execute("""
-                SELECT id, name, description, created_at 
-                FROM games 
-                WHERE master_id = %s
-            """, (master_id,))
-            return cursor.fetchall()
-        except Error as e:
-            print(f"Error al obtener partidas: {e}")
-            return []
-        finally:
-            cursor.close()
-            conn.close()
-
-    @staticmethod
-    def get_available():
-        conn = get_db()
-        if not conn:
-            return []
-
-        cursor = conn.cursor(dictionary=True)
-        try:
-            cursor.execute("""
-                SELECT g.id, g.name, g.description, g.created_at, 
-                       u.username as master_name 
-                FROM games g
-                JOIN users u ON g.master_id = u.id
-                WHERE g.status = 'open'
-            """)
-            return cursor.fetchall()
-        except Error as e:
-            print(f"Error al obtener partidas disponibles: {e}")
-            return []
-        finally:
-            cursor.close()
-            conn.close()
-
-    @staticmethod
-    def join(game_id, user_id, character_id):
-        conn = get_db()
-        if not conn:
-            return False
-
-        cursor = conn.cursor(dictionary=True)
-        try:
-            # Verificar que el personaje pertenece al usuario
-            cursor.execute("SELECT user_id FROM characters WHERE id = %s", (character_id,))
-            character = cursor.fetchone()
-            
-            if not character or character['user_id'] != user_id:
-                return False
-
-            # Verificar que la partida existe y está abierta
-            cursor.execute("SELECT status FROM games WHERE id = %s", (game_id,))
-            game = cursor.fetchone()
-            
-            if not game or game['status'] != 'open':
-                return False
-
-            # Unir al jugador a la partida
-            cursor.execute("""
-                INSERT INTO game_players (game_id, user_id, character_id)
-                VALUES (%s, %s, %s)
-            """, (game_id, user_id, character_id))
-            conn.commit()
-            return True
-        except Error as e:
-            conn.rollback()
-            print(f"Error al unirse a partida: {e}")
-            return False
         finally:
             cursor.close()
             conn.close()
@@ -420,59 +294,6 @@ def get_character_detail(character_id):
         return jsonify({'error': 'Personaje no encontrado o no tienes permisos'}), 404
     
     return jsonify(character), 200
-
-# ---- Gestión de Partidas ----
-@app.route('/games', methods=['POST'])
-@jwt_required()
-def create_game():
-    data = request.json
-    user_id = get_jwt_identity()
-
-    if not data or 'name' not in data:
-        return jsonify({'error': 'Se requiere el nombre de la partida'}), 400
-
-    game_id = Game.create(
-        user_id,
-        data['name'],
-        data.get('description', '')
-    )
-
-    if not game_id:
-        return jsonify({'error': 'Error al crear partida'}), 500
-
-    return jsonify({
-        'message': 'Partida creada exitosamente',
-        'game_id': game_id
-    }), 201
-
-@app.route('/games/mine', methods=['GET'])
-@jwt_required()
-def get_my_games():
-    user_id = get_jwt_identity()
-    games = Game.get_by_master(user_id)
-    return jsonify({'games': games}), 200
-
-@app.route('/games/available', methods=['GET'])
-@jwt_required()
-def get_available_games():
-    games = Game.get_available()
-    return jsonify({'games': games}), 200
-
-@app.route('/games/<int:game_id>/join', methods=['POST'])
-@jwt_required()
-def join_game(game_id):
-    user_id = get_jwt_identity()
-    data = request.json
-    
-    if not data or 'character_id' not in data:
-        return jsonify({'error': 'Se requiere el ID del personaje'}), 400
-
-    success = Game.join(game_id, user_id, data['character_id'])
-    
-    if not success:
-        return jsonify({'error': 'No se pudo unir a la partida. Verifica que el personaje te pertenezca y que la partida esté abierta.'}), 400
-
-    return jsonify({'message': 'Te has unido a la partida exitosamente'}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
