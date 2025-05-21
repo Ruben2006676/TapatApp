@@ -1,34 +1,85 @@
 classDiagram
     class LoginWindow {
+        +login_user_entry: ttk.Entry
+        +login_pass_entry: ttk.Entry
+        +register_user_entry: ttk.Entry
+        +register_email_entry: ttk.Entry
+        +register_pass_entry: ttk.Entry
+        +register_confirm_pass_entry: ttk.Entry
+        +__init__(root)
+        +setup_login_tab(tab)
+        +setup_register_tab(tab)
         +do_login()
         +do_register()
     }
 
     class MainApp {
+        +root: tk.Tk
+        +main_frame: ttk.Frame
+        +characters_tree: ttk.Treeview
+        +games_tree: ttk.Treeview
+        +name_entry: ttk.Entry
+        +race_combobox: ttk.Combobox
+        +class_combobox: ttk.Combobox
+        +background_text: scrolledtext.ScrolledText
+        +__init__(root)
+        +clear_frame()
         +show_main_menu()
+        +setup_characters_tab(tab)
+        +load_characters_list(treeview)
+        +show_character_detail(treeview)
+        +setup_basic_tab(tab, character)
+        +setup_stats_tab(tab, character)
+        +setup_items_tab(tab, items)
+        +show_create_character()
+        +create_character(name, race, char_class, background, window)
+        +setup_sessions_tab(tab)
+        +load_games_list()
+        +show_create_session()
+        +create_session(name, description, window)
+        +show_join_session()
+        +join_session(game_id, character_id, window)
+        +setup_combat_tab(tab)
+        +draw_combat_example(canvas)
+        +show_start_combat()
+        +start_combat(session_id, window)
         +logout()
     }
 
     class API {
-        +login()
-        +register()
-        +create_character()
+        +BASE_URL: str = "http://localhost:5000"
+        +register(username, password, email)
+        +login(username, password)
+        +create_character(name, race, char_class, background)
         +get_characters()
-        +create_game()
+        +get_character_detail(character_id)
+        +create_game(name, description)
         +get_available_games()
-        +join_game()
+        +join_game(game_id, character_id)
     }
 
     class LocalStorage {
-        +set_item()
-        +get_item()
-        +remove_item()
+        +storage: dict (static)
+        +set_item(key, value) (static)
+        +get_item(key) (static)
+        +remove_item(key) (static)
     }
 
-    class CreateCharacterWindow
-    class CharacterDetailWindow
-    class CreateSessionWindow
-    class JoinSessionWindow
+    class CreateCharacterWindow {
+        <<implied by show_create_character()>>
+    }
+
+    class CharacterDetailWindow {
+        <<implied by show_character_detail()>>
+    }
+
+    class CreateSessionWindow {
+        <<implied by show_create_session()>>
+    }
+
+    class JoinSessionWindow {
+        <<implied by show_join_session()>>
+    }
 
     LoginWindow --> API
     LoginWindow --> LocalStorage
