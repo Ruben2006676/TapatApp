@@ -178,15 +178,15 @@ El frontend está desarrollado en Tkinter y utiliza una arquitectura basada en D
 
 ## Diagrames del Backend, Frontend i d'Arquitectura
 
-[Diagrama Backend](./Projecte_ROL/Backend/DiagramaBackend.mermaid)
+[Diagrama Backend](./Backend/DiagramaBackend.mermaid)
 
-[Diagrama Frontend](./Projecte_ROL/Frontend/DiagramaFrontend.mermaid)
+[Diagrama Frontend](./Frontend/DiagramaFrontend.mermaid)
 
-[Diagrama Arquitectura Backend/Frontend](./Projecte_ROL/Backend/DiagramaArquitecturaBackendFrontend.mermaid)
+[Diagrama Arquitectura Backend/Frontend](./Backend/DiagramaArquitecturaBackendFrontend.mermaid)
 
-[Diagrama Seqüència Login](./Projecte_ROL/Backend/DiagramaArquitecturaBackendFrontend.mermaid)
+[Diagrama Seqüència Login](./Backend/DiagramaArquitecturaBackendFrontend.mermaid)
 
-[Wireframes](./Projecte_ROL/Wireframes.mermaid)
+[Wireframes](./Wireframes.mermaid)
 
 
 
