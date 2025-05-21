@@ -188,6 +188,11 @@ El frontend está desarrollado en Tkinter y utiliza una arquitectura basada en D
 
 [Wireframes](./Wireframes.mermaid)
 
+[Wireframes](./Modelo-Entidad-Relacion-Rol.PNG)
+
+
+
+
 
 
 
